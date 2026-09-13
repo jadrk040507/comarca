@@ -1,0 +1,58 @@
+name: Actualizar y publicar La Comarca
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '23 * * * *'
+permissions:
+  contents: read
+concurrency:
+  group: comarca-pages
+  cancel-in-progress: false
+jobs:
+  build:
+    if: github.event_name != 'schedule' || vars.NOTION_SYNC_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verificar exportación y calendario
+        run: npm test
+      - name: Sincronizar exclusivamente contenido público
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_AGENDA_ID: ${{ vars.NOTION_AGENDA_ID }}
+          NOTION_MATERIALS_ID: ${{ vars.NOTION_MATERIALS_ID }}
+          SYNC_ENABLED: ${{ vars.NOTION_SYNC_ENABLED }}
+        run: |
+          if [ "$SYNC_ENABLED" = "true" ]; then
+            npm run sync
+          else
+            echo 'Sincronización pendiente de activar; publicando la edición revisada.'
+          fi
+      - name: Preparar la web
+        env:
+          BASE_PATH: /comarca/
+          ONESIGNAL_APP_ID: ${{ vars.ONESIGNAL_APP_ID }}
+        run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publicar
+        id: deployment
+        uses: actions/deploy-pages@v4

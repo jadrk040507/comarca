@@ -1,0 +1,31 @@
+name: Enviar aviso a suscriptores
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: Título del aviso (máximo 80 caracteres)
+        required: true
+        type: string
+      message:
+        description: Mensaje público para todos los suscriptores (máximo 240 caracteres)
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  send:
+    if: vars.PUSH_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Enviar aviso solicitado
+        env:
+          ONESIGNAL_APP_ID: ${{ vars.ONESIGNAL_APP_ID }}
+          ONESIGNAL_REST_API_KEY: ${{ secrets.ONESIGNAL_REST_API_KEY }}
+          NOTIFICATION_TITLE: ${{ inputs.title }}
+          NOTIFICATION_MESSAGE: ${{ inputs.message }}
+        run: node scripts/send-notification.mjs
