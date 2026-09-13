@@ -7,7 +7,7 @@ export function occurrence(e,now=new Date()){
  if(e.recurrence==='Anual')while(s<now){s.setUTCFullYear(s.getUTCFullYear()+1);if(end)end.setUTCFullYear(end.getUTCFullYear()+1);}
  if(e.repeatUntil&&localDay(s)>e.repeatUntil.slice(0,10))return null;
  if(['Semanal','Anual'].includes(e.recurrence)){e.start=e.start.length===10?localDay(s):s.toISOString();if(end)e.end=e.end.length===10?localDay(end):end.toISOString();}
- const until=end||s;if((e.end||e.start).length===10?localDay(until)<localDay(now):until<now)return null;return e;
+ const until=end||s;if(!e.end||e.end.length===10?localDay(until)<localDay(now):until<now)return null;return e;
 }
 const esc=s=>String(s||'').replace(/\\/g,'\\\\').replace(/\r?\n/g,'\\n').replace(/,/g,'\\,').replace(/;/g,'\\;');
 const stamp=s=>new Date(s).toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
