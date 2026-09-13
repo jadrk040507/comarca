@@ -12,3 +12,7 @@ await writeFile('dist/agenda.ics',calendar(data.events));await writeFile('dist/.
 const version=createHash('sha256').update(await readFile('public/app.js')).update(await readFile('public/styles.css')).update(await readFile('public/calendar.js')).update(await readFile('public/motion.js')).digest('hex').slice(0,12);
 let html=await readFile('dist/index.html','utf8');html=html.replace('./styles.css',`./styles.css?v=${version}`).replace('./app.js',`./app.js?v=${version}`);await writeFile('dist/index.html',html);
 let app=await readFile('dist/app.js','utf8');app=app.replace("'./calendar.js'",`'./calendar.js?v=${version}'`);app=app.replace("'./motion.js'",`'./motion.js?v=${version}'`);await writeFile('dist/app.js',app);
+
+const {buildPages}=await import('./pages.mjs');
+await buildPages(data,basePath,version);
+await import('./check-site.mjs');

@@ -80,3 +80,12 @@ La conexión remota requiere una clave de Notion; las pruebas sin ella verifican
 - https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule
 - https://documentation.onesignal.com/docs/en/web-sdk-reference
 - https://documentation.onesignal.com/docs/en/onesignal-service-worker
+
+
+## Sitio completo
+
+La portada es una entrada breve. Hay rutas independientes para `/agenda/`, `/actividades/`, `/recursos/`, `/participar/`, `/nosotros/`, `/ayuda/` y `/avisos/`. Las cinco actividades tienen páginas propias bajo `/actividades/`. Cada registro público genera una ficha estable en `/eventos/ID/`; comparte ese enlace para invitar.
+
+`scripts/pages.mjs` genera todas las páginas durante el build a partir de la plantilla editorial y los datos públicos. Fechas, fichas, imágenes y recursos salen de `public/data.json`, que será actualizado por la sincronización de Notion cuando se active. Las explicaciones generales de cada actividad se mantienen en `scripts/pages.mjs`. La portada selecciona el próximo retiro mensual disponible; no requiere editar su fecha por separado.
+
+`scripts/check-site.mjs` se ejecuta en cada build: revisa enlaces y archivos internos, un título principal por página e identificadores únicos. La agenda y los recursos incluyen contenido estático como respaldo si JavaScript no carga. Los filtros y las opciones de avisos usan JavaScript.
