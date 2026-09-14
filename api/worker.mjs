@@ -1,3 +1,4 @@
+import {cms} from './cms.mjs';
 import {team} from './team.mjs';
 import {publicAgenda,cachedAgenda} from './public-agenda.mjs';
 export const activities=['Retiro mensual · 1 octubre 2026','Retiro semestral · 16–18 octubre 2026','Círculos','Catecismo','Despensas y visitas','Hikes y caminatas','Labor social','Aportaciones y donaciones','Proponer una actividad','Otras actividades'];
@@ -15,6 +16,8 @@ export function validate(input){
 export function notionPayload(v,dataSourceId){return {parent:{type:'data_source_id',data_source_id:dataSourceId},properties:{'Nombre y apellido':{title:[{text:{content:v.name}}]},Correo:{email:v.email},'Actividad solicitada':{select:{name:activities.slice(0,4).includes(v.activity)?v.activity:'Otras actividades'}},Estado:{select:{name:'Solicitada'}},WhatsApp:{phone_number:v.phone||null},'Quiero recibir novedades por correo':{checkbox:v.emailOptIn},'Acepto avisos de mi actividad por WhatsApp':{checkbox:v.whatsappOptIn},Fecha:{date:{start:new Date().toISOString()}}},children:[{object:'block',type:'paragraph',paragraph:{rich_text:[{type:'text',text:{content:`Solicitud desde la web · ${v.activity}\nUso de datos para coordinar la solicitud: aceptado.\n${v.message||'Sin mensaje adicional.'}`}}]}}]};}
 async function readBounded(request){const reader=request.body?.getReader();if(!reader)throw Error('empty');let count=0,chunks=[];for(;;){const {done,value}=await reader.read();if(done)break;count+=value.length;if(count>12000){await reader.cancel();throw Error('large');}chunks.push(value);}const bytes=new Uint8Array(count);let offset=0;for(const c of chunks){bytes.set(c,offset);offset+=c.length;}return JSON.parse(new TextDecoder().decode(bytes));}
 export async function handle(request,env,fetcher=fetch){
+ const path=new URL(request.url).pathname;
+ if(path==='/cms'||path.startsWith('/cms/')||path==='/equipo/activar')return cms(request,env,fetcher);
  if(new URL(request.url).pathname==='/equipo'||new URL(request.url).pathname.startsWith('/equipo/'))return team(request,env,fetcher);
  if(['/public/agenda','/calendario.ics'].includes(new URL(request.url).pathname))return publicAgenda(request,env,fetcher);
  const origin=request.headers.get('Origin'),allowed=(env.ALLOWED_ORIGINS||'').split(',');

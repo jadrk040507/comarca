@@ -15,9 +15,10 @@ export function activityPayload(v,id){
  if(!v||typeof v!=='object'||Array.isArray(v))throw Error('Revisa los datos.');
  const str=(k,max)=>{if(typeof v[k]!=='string'||v[k].length>max)throw Error('Revisa '+k);return v[k].trim();};
  const title=str('title',150),location=str('location',250),summary=str('summary',1800),start=str('start',16),end=str('end',16);
- const validDate=s=>/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(s)&&Number.isFinite(Date.parse(s+'-06:00'))&&new Date(s+':00Z').toISOString().slice(0,16)===s;
- if(!title||!validDate(start)||(end&&(!validDate(end)||end<=start))||!types.includes(v.type)||!['No repetir','Semanal','Anual'].includes(v.recurrence))throw Error('Revisa título, fechas, tipo y repetición.');
- return {parent:{type:'data_source_id',data_source_id:id},properties:{Name:{title:[{text:{content:title}}]},Tipo:{select:{name:v.type}},Fecha:{date:{start:start+':00-06:00',...(end?{end:end+':00-06:00'}:{})}},Lugar:{rich_text:location?[{text:{content:location}}]:[]},'Resumen público':{rich_text:summary?[{text:{content:summary}}]:[]},Estado:{select:{name:'Borrador'}},'Publicar en web':{checkbox:false},'Repetición web':{select:{name:v.recurrence}}}};
+ const allDay=v.allDay===true;
+ const validDate=s=>allDay?/^\d{4}-\d{2}-\d{2}$/.test(s)&&Number.isFinite(Date.parse(s))&&new Date(s).toISOString().slice(0,10)===s:/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(s)&&Number.isFinite(Date.parse(s+'-06:00'))&&new Date(s+':00Z').toISOString().slice(0,16)===s;
+ if(!title||!validDate(start)||(end&&(!validDate(end)||(allDay?end<start:end<=start)))||!types.includes(v.type)||!['No repetir','Semanal','Anual'].includes(v.recurrence))throw Error('Revisa título, fechas, tipo y repetición.');
+ return {parent:{type:'data_source_id',data_source_id:id},properties:{Name:{title:[{text:{content:title}}]},Tipo:{select:{name:v.type}},Fecha:{date:{start:allDay?start:start+':00-06:00',...(end?{end:allDay?end:end+':00-06:00'}:{})}},Lugar:{rich_text:location?[{text:{content:location}}]:[]},'Resumen público':{rich_text:summary?[{text:{content:summary}}]:[]},Estado:{select:{name:'Borrador'}},'Publicar en web':{checkbox:false},'Repetición web':{select:{name:v.recurrence}}}};
 }
 const headers={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Content-Security-Policy':"default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; connect-src 'self'; img-src https://la-comarca.github.io; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"};
 const reply=(body,status=200,type='application/json')=>new Response(type==='application/json'?JSON.stringify(body):body,{status,headers:{...headers,'Content-Type':type+';charset=utf-8'}});
@@ -27,23 +28,27 @@ export async function team(request,env,fetcher=fetch,authenticate=identity){
  if(request.method==='GET'&&path==='/equipo')return reply(teamHTML,200,'text/html');
  if(request.method==='GET'&&path==='/equipo/app.js')return reply(teamJS,200,'text/javascript');
  if(request.method==='GET'&&path==='/equipo/api/me')return reply(user);
- if(path!=='/equipo/api/agenda')return reply({message:'Ruta no disponible.'},404);
+ const pageId=path.match(/^\/equipo\/api\/agenda\/([a-f0-9-]{36})$/)?.[1];
+ if(path!=='/equipo/api/agenda'&&!pageId)return reply({message:'Ruta no disponible.'},404);
  if(!env.NOTION_TOKEN||!env.NOTION_AGENDA_ID)return reply({message:'No se pudo conectar con la agenda.'},503);
  const notionHeaders={Authorization:`Bearer ${env.NOTION_TOKEN}`,'Notion-Version':'2025-09-03','Content-Type':'application/json'};
  try{
- if(request.method==='GET'){
+ if(request.method==='GET'&&!pageId){
   const cursor=url.searchParams.get('cursor');if(cursor&&(!/^[a-zA-Z0-9-]{1,100}$/.test(cursor)))return reply({message:'Página no válida.'},400);
   const r=await fetcher('https://api.notion.com/v1/data_sources/'+env.NOTION_AGENDA_ID+'/query',{method:'POST',headers:notionHeaders,body:JSON.stringify({page_size:100,sorts:[{property:'Fecha',direction:'ascending'}],...(cursor?{start_cursor:cursor}:{})}),signal:AbortSignal.timeout(15000)});
   if(!r.ok)throw Error('notion');const d=await r.json();
   const plain=a=>(a||[]).map(x=>x.plain_text??x.text?.content??'').join('');
-  return reply({events:d.results.map(p=>({id:p.id,title:plain(p.properties.Name?.title),start:p.properties.Fecha?.date?.start,location:plain(p.properties.Lugar?.rich_text),type:p.properties.Tipo?.select?.name,status:p.properties.Estado?.select?.name,published:p.properties['Publicar en web']?.checkbox===true,recurrence:p.properties['Repetición web']?.select?.name})),nextCursor:d.has_more?d.next_cursor:null});
+  return reply({events:d.results.map(p=>({id:p.id,version:p.last_edited_time,end:p.properties.Fecha?.date?.end,summary:plain(p.properties['Resumen público']?.rich_text),title:plain(p.properties.Name?.title),start:p.properties.Fecha?.date?.start,location:plain(p.properties.Lugar?.rich_text),type:p.properties.Tipo?.select?.name,status:p.properties.Estado?.select?.name,published:p.properties['Publicar en web']?.checkbox===true,recurrence:p.properties['Repetición web']?.select?.name})),nextCursor:d.has_more?d.next_cursor:null});
  }
- if(request.method==='POST'){
+ if(request.method==='POST'&&!pageId||request.method==='PATCH'&&pageId){
   if(request.headers.get('Origin')!==url.origin||request.headers.get('X-Comarca-Request')!=='team'||!request.headers.get('Content-Type')?.startsWith('application/json'))return reply({message:'Solicitud no permitida.'},403);
   if(!env.FORM_LIMIT||!(await env.FORM_LIMIT.limit({key:'team:'+user.email})).success)return reply({message:'Espera un minuto antes de guardar otra actividad.'},429);
-  let payload;try{const reader=request.body?.getReader();if(!reader)throw Error();let length=0,parts=[];for(;;){const x=await reader.read();if(x.done)break;length+=x.value.length;if(length>12000){await reader.cancel();throw Error();}parts.push(x.value);}payload=activityPayload(JSON.parse(await new Blob(parts).text()),env.NOTION_AGENDA_ID);}catch{return reply({message:'Revisa los datos y las fechas de la actividad.'},400);}
-  const r=await fetcher('https://api.notion.com/v1/pages',{method:'POST',headers:notionHeaders,body:JSON.stringify(payload),signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('notion');const saved=await r.json();return reply({id:saved.id,message:'Actividad guardada como borrador en Notion.'},201);
+  let payload,input;try{const reader=request.body?.getReader();if(!reader)throw Error();let length=0,parts=[];for(;;){const x=await reader.read();if(x.done)break;length+=x.value.length;if(length>12000){await reader.cancel();throw Error();}parts.push(x.value);}input=JSON.parse(await new Blob(parts).text());payload=activityPayload(input,env.NOTION_AGENDA_ID);if(input.status!==undefined){if(!['Borrador','Tentativa','Confirmada','Cancelada','Realizada'].includes(input.status)||typeof input.published!=='boolean')throw Error();payload.properties.Estado={select:{name:input.status}};payload.properties['Publicar en web']={checkbox:input.published};}}catch{return reply({message:'Revisa los datos y las fechas de la actividad.'},400);}
+  if(pageId){
+   const current=await fetcher('https://api.notion.com/v1/pages/'+pageId,{headers:notionHeaders,signal:AbortSignal.timeout(15000)});if(!current.ok)throw Error('notion');const page=await current.json();if(page.parent?.data_source_id?.replaceAll('-','')!==env.NOTION_AGENDA_ID.replaceAll('-',''))return reply({message:'Actividad no disponible.'},404);if(!input.version||input.version!==page.last_edited_time)return reply({message:'Otra persona modificó esta actividad. Actualiza la agenda antes de volver a editar.'},409);delete payload.parent;
+  }
+  const r=await fetcher('https://api.notion.com/v1/pages'+(pageId?'/'+pageId:''),{method:pageId?'PATCH':'POST',headers:notionHeaders,body:JSON.stringify(payload),signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('notion');const saved=await r.json();return reply({id:saved.id,message:input.published?'Actividad guardada y marcada para publicación.':'Actividad guardada en la agenda interna.'},pageId?200:201);
  }
  return reply({message:'Método no permitido.'},405);
- }catch{return reply({message:request.method==='POST'?'No pudimos confirmar el guardado. Revisa la agenda antes de repetir el envío.':'No se pudo cargar la agenda. Inténtalo de nuevo.'},502);}
+ }catch{return reply({message:request.method!=='GET'?'No pudimos confirmar el guardado. Revisa la agenda antes de repetir el envío.':'No se pudo cargar la agenda. Inténtalo de nuevo.'},502);}
 }
