@@ -1,3 +1,4 @@
+import {publicAgenda,cachedAgenda} from './public-agenda.mjs';
 export const activities=['Retiro mensual · 1 octubre 2026','Retiro semestral · 16–18 octubre 2026','Círculos','Catecismo','Despensas y visitas','Hikes y caminatas','Labor social','Aportaciones y donaciones','Proponer una actividad','Otras actividades'];
 export function validate(input){
  if(!input||typeof input!=='object'||Array.isArray(input))throw Error('Revisa los datos del formulario.');
@@ -13,6 +14,7 @@ export function validate(input){
 export function notionPayload(v,dataSourceId){return {parent:{type:'data_source_id',data_source_id:dataSourceId},properties:{'Nombre y apellido':{title:[{text:{content:v.name}}]},Correo:{email:v.email},'Actividad solicitada':{select:{name:activities.slice(0,4).includes(v.activity)?v.activity:'Otras actividades'}},Estado:{select:{name:'Solicitada'}},WhatsApp:{phone_number:v.phone||null},'Quiero recibir novedades por correo':{checkbox:v.emailOptIn},'Acepto avisos de mi actividad por WhatsApp':{checkbox:v.whatsappOptIn},Fecha:{date:{start:new Date().toISOString()}}},children:[{object:'block',type:'paragraph',paragraph:{rich_text:[{type:'text',text:{content:`Solicitud desde la web · ${v.activity}\nUso de datos para coordinar la solicitud: aceptado.\n${v.message||'Sin mensaje adicional.'}`}}]}}]};}
 async function readBounded(request){const reader=request.body?.getReader();if(!reader)throw Error('empty');let count=0,chunks=[];for(;;){const {done,value}=await reader.read();if(done)break;count+=value.length;if(count>12000){await reader.cancel();throw Error('large');}chunks.push(value);}const bytes=new Uint8Array(count);let offset=0;for(const c of chunks){bytes.set(c,offset);offset+=c.length;}return JSON.parse(new TextDecoder().decode(bytes));}
 export async function handle(request,env,fetcher=fetch){
+ if(['/public/agenda','/calendario.ics'].includes(new URL(request.url).pathname))return publicAgenda(request,env,fetcher);
  const origin=request.headers.get('Origin'),allowed=(env.ALLOWED_ORIGINS||'').split(',');
  const headers={'Content-Type':'application/json;charset=utf-8','Cache-Control':'no-store','Vary':'Origin','X-Content-Type-Options':'nosniff'};
  const reply=(status,message)=>new Response(JSON.stringify({ok:status===201,message}),{status,headers});
@@ -34,4 +36,4 @@ export async function handle(request,env,fetcher=fetch){
  return reply(201,'Solicitud recibida. El equipo revisará los detalles contigo; tu lugar aún no está confirmado.');
  }catch{return reply(502,'No pudimos confirmar el registro. Consulta al equipo antes de enviar otra solicitud.');}
 }
-export default {fetch(request,env){return handle(request,env);}};
+export default {fetch(request,env){if(['/public/agenda','/calendario.ics'].includes(new URL(request.url).pathname))return publicAgenda(request,env,fetch,()=>cachedAgenda(request,env));return handle(request,env);}};

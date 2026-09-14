@@ -114,3 +114,11 @@ Los créditos están visibles en la web. Las imágenes se sirven optimizadas des
 La selección editorial está centralizada en `scripts/formation.mjs`: preguntas con fuente, biblioteca con autor/tema/acceso y guías. `buildPages` genera estas páginas junto con la agenda. Al editar una ficha y publicar el cambio, GitHub Actions reconstruye el sitio. Esta selección todavía no se sincroniza con Notion; no debe presentarse como un catálogo automático. Mantener enlaces a editoriales o fuentes autorizadas, identificar el idioma cuando no sea español y revisar las explicaciones antes de publicarlas. No incluir conversaciones de acompañamiento, datos de alumnos ni expedientes.
 
 El buscador funciona en el dispositivo, no envía las búsquedas a la API. Sin JavaScript todas las fichas y preguntas siguen disponibles. La participación conserva el formulario y su validación; cambiar el lenguaje de la web no crea un control de acceso.
+
+## Agenda mediante Cloudflare y suscripción
+
+La web consulta `/public/agenda` en el Worker, con una copia publicada como respaldo claramente identificada si la API falla. El Worker lee exclusivamente Agenda con `Publicar en web=true`, excluye Borrador y transforma una lista explícita de campos. No consulta Inscripciones para esta función. `PUBLIC_AGENDA_SOURCE=notion` está activo, con caché pública de cinco minutos. El formulario de solicitudes conserva su validación y operación anterior.
+
+`/calendario.ics` ofrece suscripción sin iniciar sesión para eventos públicos. Los parámetros `type`, `circles=selected` y `circle` restringen tipos y círculos por ID estable. Sin filtros incluye los nuevos tipos. La página `/mi-calendario/` genera el enlace; no conecta ni modifica el calendario privado del visitante. Cambiar filtros requiere reemplazar la suscripción anterior. Google, Apple y Outlook controlan la frecuencia de consulta. Una caída responde 503, nunca un calendario vacío exitoso.
+
+La arquitectura y el estado del panel administrativo se describen en [docs/plataforma.md](docs/plataforma.md). El panel con roles y edición aún no está implementado. No confundir lectura pública de la agenda con permisos de escritura o acceso a expedientes.
