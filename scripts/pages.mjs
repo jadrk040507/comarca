@@ -1,3 +1,4 @@
+import {addEditorial} from './editorial.mjs';
 import {mkdir,writeFile,readFile} from 'node:fs/promises';
 import {activities as registrationActivities} from '../api/worker.mjs';
 import {parseDate,TZ,occurrence} from '../public/calendar.js';
@@ -16,6 +17,7 @@ const p=s=>`<p>${s}</p>`;
 const cta=`<div class="page-cta"><h2>¿Te sumas?</h2><a class="button signup" href="#">Me interesa participar ↗</a><p>El equipo confirma los detalles contigo después de recibir tu solicitud.</p></div>`;
 const nav=[['agenda','Agenda'],['actividades','Actividades'],['recursos','Recursos'],['participar','Participar']];
 async function page(path,title,description,body,active=''){
+body=addEditorial(path,body,base);
 body=body.replace('<div class="agenda-toolbar">','<div class="agenda-view-switch" role="group" aria-label="Vista de agenda"><button data-agenda-view="list" aria-pressed="true">Lista</button><button data-agenda-view="month" aria-pressed="false">Calendario</button></div><div id="month-calendar" hidden><div class="month-controls"><button id="previous-month" aria-label="Mes anterior">←</button><h2 id="month-label" aria-live="polite"></h2><button id="next-month" aria-label="Mes siguiente">→</button><button id="current-month">Hoy</button></div><p class="small">Selecciona un encuentro para ver sus detalles. Desliza horizontalmente en celular.</p><div class="calendar-scroll" tabindex="0" role="region" aria-label="Calendario mensual"><div id="month-grid" class="month-grid"></div></div></div><div class="agenda-toolbar">');
 body=body.replace('<p>Cargando la agenda…</p>',data.events.map(e=>`<article class="event-card"><div class="event-info"><span class="badge">${esc(e.type)}</span><h3><a href="${base}eventos/${esc(e.id)}/">${esc(e.title)}</a></h3><p>${esc(dateLabel(e))} · ${esc(e.location)}</p></div></article>`).join('')).replace('<div id="resources-list" class="resources-grid"></div>',`<div id="resources-list" class="resources-grid">${data.resources.map((r,i)=>`<a class="resource-card" href="${esc(r.url)}" target="_blank" rel="noopener noreferrer"><span class="resource-symbol">${i+1}</span><div><small>${esc(r.category)}</small><h3>${esc(r.title)}</h3><p>${esc(r.summary)}</p></div><span>↗</span></a>`).join('')}</div>`);
 const depth=path.split('/').filter(Boolean).length;

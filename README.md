@@ -99,3 +99,12 @@ La agenda permite alternar lista/calendario mensual. Expande las recurrencias y 
 Para activar el formulario propio se necesitan las variables de GitHub `REGISTRATION_API` (URL HTTPS terminada en `/solicitudes`) y `TURNSTILE_SITE_KEY`. Sin ambas se muestra el formulario propio con el envío desactivado y un aviso explícito. La API vive en `api/worker.mjs`; las claves `NOTION_TOKEN` y `TURNSTILE_SECRET_KEY` se guardan exclusivamente como secretos de Cloudflare. El origen, los campos, el consentimiento y la verificación Turnstile se validan en servidor. Ningún campo del cliente puede confirmar inscripciones, registrar asistencia ni validar pagos. Los errores no exponen respuestas de Notion ni datos personales.
 
 La organización de publicación es `la-comarca` y su repositorio `la-comarca.github.io`. El workflow usa la raíz `/` en ese repositorio y `/comarca/` en el repositorio anterior. Las credenciales y variables de cada repositorio se configuran por separado.
+
+### Citas e imágenes editoriales
+Las cinco citas y sus fuentes están en `scripts/editorial.mjs`. Editar siempre juntos texto, autor y referencia; no atribuir a Pedro Casciaro las palabras de san Josemaría que recoge en sus libros. `addEditorial` decide dónde aparece cada bloque. Recursos reúne las cinco voces con enlaces a sus fuentes originales.
+
+Fotografías de referencia (no son fotos de actividades locales), bajo licencia Unsplash, consultadas el 13-09-2026:
+- `assets/lectura.webp`: Christopher Stites, https://unsplash.com/photos/open-book-with-sunlight-streaming-across-pages-qhnVF1K3lnk
+- `assets/sendero.webp`: Jefferson Sees, https://unsplash.com/photos/person-walking-on-a-forest-trail-with-mountains-behind-LjMxMgYPi8Q
+
+Los créditos están visibles en la web. Las imágenes se sirven optimizadas desde el propio sitio, con carga diferida. Las entradas visuales aprovechan el movimiento existente y respetan la preferencia de movimiento reducido.
