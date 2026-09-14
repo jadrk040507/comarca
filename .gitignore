@@ -10,3 +10,5 @@ api/.dev.vars*
 api/.env*
 
 .wrangler/
+
+api/worker-configuration.d.ts
