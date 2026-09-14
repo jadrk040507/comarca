@@ -13,3 +13,12 @@ test('preguntas enlazables y recursos con fuentes HTTPS',()=>{
  for(const q of questions) assert.match(q[4],/^https:\/\//);
  for(const r of library) assert.match(r[5],/^https:\/\//);
 });
+
+const {prayers,prayerbook}=await import('../scripts/prayerbook.mjs');
+test('el devocionario conserva anclas únicas y versiones completas en ambos idiomas',()=>{
+ assert.equal(new Set(prayers.map(p=>p.id)).size,prayers.length);
+ for(const p of prayers){assert.ok(p.es.trim().length>20);assert.ok(p.la.trim().length>20);}
+ for(const id of ['padrenuestro','avemaria','gloria','angelus','salve-regina','adoro-te-devote','lauda-sion','laudate-dominum','evangelio','tantum-ergo'])assert.ok(prayers.some(p=>p.id===id));
+ const html=prayerbook('/comarca/');assert.ok(html.includes('/comarca/guias/retiro/'));assert.equal((html.match(/lang="la"/g)||[]).length,prayers.length);
+ assert.ok(matchesCatalog('Regina cæli','Con María','regina caeli',''));
+});

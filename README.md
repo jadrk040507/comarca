@@ -122,3 +122,9 @@ La web consulta `/public/agenda` en el Worker, con una copia publicada como resp
 `/calendario.ics` ofrece suscripción sin iniciar sesión para eventos públicos. Los parámetros `type`, `circles=selected` y `circle` restringen tipos y círculos por ID estable. Sin filtros incluye los nuevos tipos. La página `/mi-calendario/` genera el enlace; no conecta ni modifica el calendario privado del visitante. Cambiar filtros requiere reemplazar la suscripción anterior. Google, Apple y Outlook controlan la frecuencia de consulta. Una caída responde 503, nunca un calendario vacío exitoso.
 
 La arquitectura y el estado del panel administrativo se describen en [docs/plataforma.md](docs/plataforma.md). El panel con roles y edición aún no está implementado. No confundir lectura pública de la agenda con permisos de escritura o acceso a expedientes.
+
+## Devocionario bilingüe
+
+Los textos están centralizados en `content/prayers.json`, con ID estable, título, categoría, nota y versiones `es`/`la`. `scripts/prayerbook.mjs` genera HTML completo, accesible también sin JavaScript. El buscador, los filtros y las preferencias locales de idioma/tamaño se gestionan en `public/formation.js`; no se envían preferencias de oración a la API.
+
+Se incluyen textos tradicionales en dominio público y traducciones de apoyo propias de los himnos, identificadas como tales, sin reproducir arreglos musicales ni traducciones modernas editoriales. Las referencias permiten contrastar los textos. Para el canto en español y la celebración litúrgica, debe seguirse la versión correspondiente de la comunidad. Este catálogo todavía se mantiene en el repositorio; su migración al panel/Notion está pendiente junto con la biblioteca editorial.
