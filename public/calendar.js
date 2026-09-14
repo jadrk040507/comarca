@@ -20,3 +20,16 @@ export function calendar(events,now=new Date()){
  a.push('LOCATION:'+esc(e.location),'DESCRIPTION:'+esc(e.summary),'STATUS:'+(e.status==='Cancelada'?'CANCELLED':e.status==='Tentativa'?'TENTATIVE':'CONFIRMED'),'END:VEVENT');}
  return [...a,'END:VCALENDAR'].map(fold).join('\r\n')+'\r\n';
 }
+
+// Expand public recurrences into the days visible in one month (month is zero-based).
+export function monthOccurrences(events,year,month){
+ const first=new Date(Date.UTC(year,month,1,6)),last=new Date(Date.UTC(year,month+1,1,6)),rows=[];
+ for(const e of events){const original=parseDate(e.start),duration=e.end?Math.max(0,parseDate(e.end)-original):0;let start=new Date(original);
+ if(e.recurrence==='Semanal'){start=new Date(+start+Math.max(0,Math.floor((first-start-duration)/604800000))*604800000);}
+ if(e.recurrence==='Anual'){start.setUTCFullYear(Math.max(original.getUTCFullYear(),year-1));}
+ for(let n=0;n<60&&start<last;n++){
+ const end=new Date(+start+duration);if(end>=first&&(!e.repeatUntil||localDay(start)<=e.repeatUntil.slice(0,10))){const from=localDay(start),until=localDay(end);for(let d=new Date(first);d<last;d.setUTCDate(d.getUTCDate()+1)){const day=localDay(d);if(day>=from&&day<=until)rows.push({...e,start:e.start.length===10?from:start.toISOString(),day});}}
+ if(e.recurrence==='Semanal')start=new Date(+start+604800000);else if(e.recurrence==='Anual')start.setUTCFullYear(start.getUTCFullYear()+1);else break;
+ }
+ }return rows.sort((a,b)=>parseDate(a.start)-parseDate(b.start));
+}

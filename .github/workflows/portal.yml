@@ -36,7 +36,9 @@ jobs:
           fi
       - name: Preparar la web
         env:
-          BASE_PATH: /comarca/
+          BASE_PATH: ${{ github.event.repository.name == 'la-comarca.github.io' && '/' || '/comarca/' }}
+          REGISTRATION_API: ${{ vars.REGISTRATION_API }}
+          TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
           ONESIGNAL_APP_ID: ${{ vars.ONESIGNAL_APP_ID }}
         run: npm run build
       - uses: actions/upload-pages-artifact@v3

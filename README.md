@@ -89,3 +89,13 @@ La portada es una entrada breve. Hay rutas independientes para `/agenda/`, `/act
 `scripts/pages.mjs` genera todas las páginas durante el build a partir de la plantilla editorial y los datos públicos. Fechas, fichas, imágenes y recursos salen de `public/data.json`, que será actualizado por la sincronización de Notion cuando se active. Las explicaciones generales de cada actividad se mantienen en `scripts/pages.mjs`. La portada selecciona el próximo retiro mensual disponible; no requiere editar su fecha por separado.
 
 `scripts/check-site.mjs` se ejecuta en cada build: revisa enlaces y archivos internos, un título principal por página e identificadores únicos. La agenda y los recursos incluyen contenido estático como respaldo si JavaScript no carga. Los filtros y las opciones de avisos usan JavaScript.
+
+## Aportaciones, calendario y formularios
+
+El sitio incorpora `/apoyar/`, `/proponer/`, `/actividades/despensas/` y `/actividades/hikes/`. Las aportaciones son voluntarias; no se publican cuentas, importes ni promesas de recepción sin confirmar. Las propuestas pueden prepararse como borradores locales.
+
+La agenda permite alternar lista/calendario mensual. Expande las recurrencias y los eventos de varios días. El formulario de Notion usa su URL oficial de inserción y se completa dentro de `/participar/#inscripcion`.
+
+Para activar el formulario propio se necesitan las variables de GitHub `REGISTRATION_API` (URL HTTPS terminada en `/solicitudes`) y `TURNSTILE_SITE_KEY`. Sin ambas se mantiene el formulario integrado. La API vive en `api/worker.mjs`; las claves `NOTION_TOKEN` y `TURNSTILE_SECRET_KEY` se guardan exclusivamente como secretos de Cloudflare. El origen, los campos, el consentimiento y la verificación Turnstile se validan en servidor. Ningún campo del cliente puede confirmar inscripciones, registrar asistencia ni validar pagos. Los errores no exponen respuestas de Notion ni datos personales.
+
+La organización de publicación es `la-comarca` y su repositorio `la-comarca.github.io`. El workflow usa la raíz `/` en ese repositorio y `/comarca/` en el repositorio anterior. Las credenciales y variables de cada repositorio se configuran por separado.

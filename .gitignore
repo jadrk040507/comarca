@@ -4,3 +4,9 @@
 dist/
 node_modules/
 .sites-runtime/
+api/node_modules/
+api/.wrangler/
+api/.dev.vars*
+api/.env*
+
+.wrangler/
