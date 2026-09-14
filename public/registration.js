@@ -1,9 +1,10 @@
 export async function initRegistration(config){
- const form=document.querySelector('#native-registration');if(!form||!config.registrationApi||!config.turnstileSiteKey)return;
- document.querySelector('#notion-form-fallback').hidden=true;form.hidden=false;
+ const form=document.querySelector('#native-registration');if(!form)return;
+ if(!config.registrationApi||!config.turnstileSiteKey)return;
  const status=form.querySelector('[role=status]'),button=form.querySelector('[type=submit]');let widget=null,token='';
+ status.textContent='Preparando la verificación…';
  const script=document.createElement('script');script.src='https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';script.async=true;
- script.onload=()=>{widget=window.turnstile.render('#registration-challenge',{sitekey:config.turnstileSiteKey,action:'inscripcion',theme:'light',callback:value=>{token=value;button.disabled=false;},'expired-callback':()=>{token='';button.disabled=true;},'error-callback':()=>{token='';button.disabled=true;status.textContent='No se pudo cargar la verificación. Recarga la página para intentarlo de nuevo.';}});};
+ script.onload=()=>{widget=window.turnstile.render('#registration-challenge',{sitekey:config.turnstileSiteKey,action:'inscripcion',theme:'light',callback:value=>{token=value;button.disabled=false;status.textContent='';},'expired-callback':()=>{token='';button.disabled=true;},'error-callback':()=>{token='';button.disabled=true;status.textContent='No se pudo cargar la verificación. Recarga la página para intentarlo de nuevo.';}});};
  script.onerror=()=>{status.textContent='No se pudo cargar la verificación. Recarga la página para intentarlo de nuevo.';};document.head.append(script);
  const requestActivity=new URL(location.href).searchParams.get('actividad');if(requestActivity&&[...form.elements.activity.options].some(o=>o.value===requestActivity))form.elements.activity.value=requestActivity;
  if(requestActivity==='Proponer una actividad'){try{const draft=sessionStorage.getItem('comarca-proposal');if(draft){form.elements.message.value=draft;sessionStorage.removeItem('comarca-proposal');}}catch{}}
