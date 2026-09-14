@@ -11,9 +11,9 @@ await writeFile('dist/config.json',JSON.stringify({basePath,oneSignalAppId,regis
 await writeFile('dist/manifest.webmanifest',JSON.stringify({id:basePath,name:'La Comarca',short_name:'La Comarca',lang:'es-MX',start_url:basePath,scope:basePath,display:'standalone',background_color:'#ffffff',theme_color:'#133b58',icons:[{src:'./assets/icon-192.png',sizes:'192x192',type:'image/png'},{src:'./assets/icon-512.png',sizes:'512x512',type:'image/png',purpose:'any maskable'}]}));
 await writeFile('dist/agenda.ics',calendar(data.events));await writeFile('dist/.nojekyll','');console.log(`Web lista: ${data.events.length} actividades, ${data.resources.length} recursos.`);
 
-const version=createHash('sha256').update(await readFile('public/app.js')).update(await readFile('public/styles.css')).update(await readFile('public/calendar.js')).update(await readFile('public/motion.js')).update(await readFile('public/registration.js')).digest('hex').slice(0,12);
+const version=createHash('sha256').update(await readFile('public/app.js')).update(await readFile('public/styles.css')).update(await readFile('public/calendar.js')).update(await readFile('public/motion.js')).update(await readFile('public/registration.js')).update(await readFile('public/formation.js')).digest('hex').slice(0,12);
 let html=await readFile('dist/index.html','utf8');html=html.replace('./styles.css',`./styles.css?v=${version}`).replace('./app.js',`./app.js?v=${version}`);await writeFile('dist/index.html',html);
-let app=await readFile('dist/app.js','utf8');app=app.replace("'./calendar.js'",`'./calendar.js?v=${version}'`);app=app.replace("'./motion.js'",`'./motion.js?v=${version}'`);app=app.replace("'./registration.js'",`'./registration.js?v=${version}'`);await writeFile('dist/app.js',app);
+let app=await readFile('dist/app.js','utf8');app=app.replace("'./calendar.js'",`'./calendar.js?v=${version}'`);app=app.replace("'./motion.js'",`'./motion.js?v=${version}'`);app=app.replace("'./registration.js'",`'./registration.js?v=${version}'`);app=app.replace("'./formation.js'",`'./formation.js?v=${version}'`);await writeFile('dist/app.js',app);
 
 const {buildPages}=await import('./pages.mjs');
 await buildPages(data,basePath,version);

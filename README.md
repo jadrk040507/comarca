@@ -108,3 +108,9 @@ Fotografías de referencia (no son fotos de actividades locales), bajo licencia 
 - `assets/sendero.webp`: Jefferson Sees, https://unsplash.com/photos/person-walking-on-a-forest-trail-with-mountains-behind-LjMxMgYPi8Q
 
 Los créditos están visibles en la web. Las imágenes se sirven optimizadas desde el propio sitio, con carga diferida. Las entradas visuales aprovechan el movimiento existente y respetan la preferencia de movimiento reducido.
+
+## Biblioteca y formación pública
+
+La selección editorial está centralizada en `scripts/formation.mjs`: preguntas con fuente, biblioteca con autor/tema/acceso y guías. `buildPages` genera estas páginas junto con la agenda. Al editar una ficha y publicar el cambio, GitHub Actions reconstruye el sitio. Esta selección todavía no se sincroniza con Notion; no debe presentarse como un catálogo automático. Mantener enlaces a editoriales o fuentes autorizadas, identificar el idioma cuando no sea español y revisar las explicaciones antes de publicarlas. No incluir conversaciones de acompañamiento, datos de alumnos ni expedientes.
+
+El buscador funciona en el dispositivo, no envía las búsquedas a la API. Sin JavaScript todas las fichas y preguntas siguen disponibles. La participación conserva el formulario y su validación; cambiar el lenguaje de la web no crea un control de acceso.
