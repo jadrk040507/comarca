@@ -1,17 +1,31 @@
 {
- "$schema":"node_modules/wrangler/config-schema.json",
- "name":"la-comarca-formularios",
- "main":"worker.mjs",
- "account_id":"0b4dd54f3b1974a7036afdf876164aa2",
- "compatibility_date":"2026-09-13",
- "compatibility_flags":["nodejs_compat"],
- "workers_dev":true,
- "observability":{"enabled":true,"head_sampling_rate":0.1},
- "vars":{
-  "ALLOWED_ORIGINS":"https://la-comarca.github.io,https://jadrk040507.github.io",
-  "PUBLIC_AGENDA_SOURCE":"notion",
-  "NOTION_AGENDA_ID":"3d479aad-5d83-80f6-bbdd-000b94a2fce1",
-  "NOTION_DATA_SOURCE_ID":"3d479aad-5d83-8055-a2d6-000b045a7d89"
- },
- "ratelimits":[{"name":"FORM_LIMIT","namespace_id":"1047","simple":{"limit":8,"period":60}}]
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "la-comarca-formularios",
+  "main": "worker.mjs",
+  "account_id": "0b4dd54f3b1974a7036afdf876164aa2",
+  "compatibility_date": "2026-09-13",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "workers_dev": true,
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 0.1
+  },
+  "vars": {
+    "ALLOWED_ORIGINS": "https://la-comarca.github.io,https://jadrk040507.github.io",
+    "PUBLIC_AGENDA_SOURCE": "notion",
+    "NOTION_AGENDA_ID": "3d479aad-5d83-80f6-bbdd-000b94a2fce1",
+    "NOTION_DATA_SOURCE_ID": "3d479aad-5d83-8055-a2d6-000b045a7d89"
+  },
+  "ratelimits": [
+    {
+      "name": "FORM_LIMIT",
+      "namespace_id": "1047",
+      "simple": {
+        "limit": 8,
+        "period": 60
+      }
+    }
+  ]
 }
