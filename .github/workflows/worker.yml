@@ -1,14 +1,19 @@
 name: Verificar y desplegar Worker de La Comarca
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       deploy:
-        description: Desplegar el Worker después de pasar las verificaciones
+        description: Desplegar producción después de pasar las verificaciones (sólo main)
         required: true
         default: false
         type: boolean
 permissions:
   contents: read
+concurrency:
+  group: comarca-production
+  cancel-in-progress: false
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -28,14 +33,74 @@ jobs:
           TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
           ONESIGNAL_APP_ID: ${{ vars.ONESIGNAL_APP_ID }}
         run: npm run check
+      - name: Identificar la revisión de los assets
+        run: |
+          node --input-type=module <<'NODE'
+          import {writeFile} from 'node:fs/promises';
+          const commit = process.env.GITHUB_SHA;
+          if (!/^[a-f0-9]{40}$/i.test(commit || '')) throw Error('Revisión de producción inválida');
+          await writeFile('dist/deployment.json', JSON.stringify({commit}) + '\n');
+          NODE
       - name: Verificar configuración Wrangler
         working-directory: api
         run: npx wrangler deploy --dry-run
-      - name: Desplegar Worker
-        if: inputs.deploy == true
+      - name: Desplegar Worker y sitio en comarca.kipadmon.com
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || inputs.deploy == true)
         working-directory: api
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
+          if [ -z "${CLOUDFLARE_API_TOKEN:-}" ]; then
+            echo '::error::Falta el secreto CLOUDFLARE_API_TOKEN. Producción NO se ha actualizado.'
+            exit 1
+          fi
           npx wrangler d1 migrations apply la-comarca-cms --remote
           npx wrangler deploy --keep-vars
+      - name: Verificar revisión y rutas públicas en producción
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || inputs.deploy == true)
+        run: |
+          node --input-type=module <<'NODE'
+          import {setTimeout as delay} from 'node:timers/promises';
+          const origin = 'https://comarca.kipadmon.com';
+          const expected = process.env.GITHUB_SHA;
+          if (!/^[a-f0-9]{40}$/i.test(expected || '')) throw Error('Revisión esperada inválida');
+          async function read(path) {
+            const url = new URL(path, origin);
+            url.searchParams.set('verify', expected + '-' + Date.now());
+            const response = await fetch(url, {
+              headers: {'Cache-Control': 'no-cache'},
+              cache: 'no-store',
+              signal: AbortSignal.timeout(15000)
+            });
+            if (!response.ok || new URL(response.url).origin !== origin) {
+              throw Error(`No se pudo verificar ${path}: HTTP ${response.status}`);
+            }
+            return response;
+          }
+          let verified = false;
+          for (let attempt = 0; attempt < 6; attempt++) {
+            try {
+              const response = await read('/deployment.json');
+              const deployment = await response.json();
+              if (deployment.commit !== expected) throw Error('El dominio todavía sirve otra revisión');
+              verified = true;
+              break;
+            } catch (error) {
+              if (attempt === 5) throw error;
+              await delay(5000);
+            }
+          }
+          if (!verified) throw Error('No se verificó la revisión de producción');
+          for (const [path, type] of [
+            ['/', 'text/html'], ['/styles.css', 'text/css'], ['/app.js', 'javascript'],
+            ['/cms', 'text/html'], ['/cms/app.js', 'javascript']
+          ]) {
+            const response = await read(path);
+            if (!(response.headers.get('content-type') || '').includes(type)) {
+              throw Error(`Tipo de contenido inesperado en ${path}`);
+            }
+            if (!(await response.arrayBuffer()).byteLength) throw Error(`Respuesta vacía en ${path}`);
+            console.log(`OK ${path}`);
+          }
+          console.log(`Producción verificada: ${origin} @ ${expected}`);
+          NODE
