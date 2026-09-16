@@ -1,10 +1,11 @@
 import {betterAuth} from 'better-auth';
 
 export function authOptions(env) {
+ const fallback='https://la-comarca-formularios.la-comarca.workers.dev',canonical=env.CMS_ORIGIN||fallback;
  return {
-  appName:'La Comarca',baseURL:env.CMS_ORIGIN||'https://la-comarca-formularios.la-comarca.workers.dev',basePath:'/cms/auth',
+  appName:'La Comarca',baseURL:canonical,basePath:'/cms/auth',
   secret:env.CMS_AUTH_SECRET,database:env.CMS_DB,
-  trustedOrigins:[env.CMS_ORIGIN||'https://la-comarca-formularios.la-comarca.workers.dev'],
+  trustedOrigins:[...new Set([canonical,fallback])],
   emailAndPassword:{enabled:true,minPasswordLength:12,maxPasswordLength:128,autoSignIn:false},
   session:{expiresIn:60*60*24,updateAge:60*60,cookieCache:{enabled:false}},
   advanced:{useSecureCookies:!(env.CMS_ORIGIN||'').startsWith('http://localhost'),cookiePrefix:'comarca',defaultCookieAttributes:{httpOnly:true,sameSite:'lax'}},

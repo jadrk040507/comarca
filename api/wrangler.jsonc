@@ -8,6 +8,12 @@
     "nodejs_compat"
   ],
   "workers_dev": true,
+  "routes": [
+    {
+      "pattern": "comarca.kipadmon.com",
+      "custom_domain": true
+    }
+  ],
   "assets": {
     "directory": "../dist",
     "binding": "ASSETS",
@@ -27,7 +33,8 @@
     "head_sampling_rate": 0.1
   },
   "vars": {
-    "ALLOWED_ORIGINS": "https://la-comarca.github.io,https://jadrk040507.github.io,https://la-comarca-formularios.la-comarca.workers.dev",
+    "CMS_ORIGIN": "https://comarca.kipadmon.com",
+    "ALLOWED_ORIGINS": "https://comarca.kipadmon.com,https://la-comarca.github.io,https://jadrk040507.github.io,https://la-comarca-formularios.la-comarca.workers.dev",
     "PUBLIC_AGENDA_SOURCE": "notion",
     "CMS_CONNECTED_MODULES": "materials,transport,students,attendance,lessons,grades,topics,shifts,registrations",
     "NOTION_AGENDA_ID": "3d479aad-5d83-80f6-bbdd-000b94a2fce1",
