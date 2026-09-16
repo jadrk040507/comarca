@@ -1,12 +1,15 @@
+import {recordUpdate,recentUpdates} from './cms-updates.mjs';
+import {uploadFile} from './cms-files.mjs';
 import {createAuth,cmsIdentity,can,digest} from './cms-auth.mjs';
 import {identity,team} from './team.mjs';
 import {cmsHTML,cmsJS} from './cms-ui.mjs';
+import {modules,permissionKeys,modulePermission,sourceId,enabled,records,notion,plain,belongs,RecordError} from './cms-records.mjs';
 
 const security={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Content-Security-Policy':"default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; connect-src 'self'; img-src 'self' https://la-comarca.github.io; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"};
 const reply=(data,status=200,type='application/json')=>new Response(type==='application/json'?JSON.stringify(data):data,{status,headers:{...security,'Content-Type':type+';charset=utf-8'}});
 export async function jsonBody(request){let parts=[],length=0;const reader=request.body?.getReader();if(!reader)throw Error('body');for(;;){const {value,done}=await reader.read();if(done)break;length+=value.length;if(length>12000){await reader.cancel();throw Error('body');}parts.push(value);}return JSON.parse(await new Blob(parts).text());}
 export const sameOrigin=request=>request.headers.get('Origin')===new URL(request.url).origin&&request.headers.get('X-Comarca-Request')==='cms'&&request.headers.get('Content-Type')?.startsWith('application/json');
-export function invitationInput(v){if(typeof v.email!=='string'||v.email.length>254||!/^\S+@\S+\.\S+$/.test(v.email)||!['reader','editor'].includes(v.role)||!Array.isArray(v.modules)||v.modules.length!==1||v.modules[0]!=='agenda')throw Error('invite');return {email:v.email.trim().toLowerCase(),role:v.role,modules:v.modules};}
+export function invitationInput(v){if(typeof v.email!=='string'||v.email.length>254||!/^\S+@\S+\.\S+$/.test(v.email)||!['reader','editor'].includes(v.role)||!Array.isArray(v.modules)||!v.modules.length||v.modules.length>permissionKeys.length||v.modules.some(m=>!permissionKeys.includes(m))||new Set(v.modules).size!==v.modules.length)throw Error('invite');return {email:v.email.trim().toLowerCase(),role:v.role,modules:v.modules};}
 
 export async function cms(request,env,fetcher=fetch,dependencies={}) {
  const path=new URL(request.url).pathname.replace(/\/$/,''),method=request.method;
@@ -27,8 +30,10 @@ export async function cms(request,env,fetcher=fetch,dependencies={}) {
    const response=await auth.handler(request),headers=new Headers(response.headers);for(const [key,value] of Object.entries(security))headers.set(key,value);
    return new Response(response.body,{status:response.status,headers});
   }
-  if(method==='POST'&&!sameOrigin(request))return reply({message:'Solicitud no permitida.'},403);
-  if(method==='POST'&&(!env.FORM_LIMIT||!(await env.FORM_LIMIT.limit({key:'cms-write:'+request.headers.get('CF-Connecting-IP')})).success))return reply({message:'Espera un minuto antes de guardar otra vez.'},429);
+  const fileRoute=path.match(/^\/cms\/api\/files\/([a-z]+)\/([a-f0-9-]{36})$/i);
+  const fileOrigin=fileRoute&&method==='POST'&&request.headers.get('Origin')===new URL(request.url).origin&&request.headers.get('X-Comarca-Request')==='cms'&&request.headers.get('Content-Type')?.startsWith('multipart/form-data;');
+  if(['POST','PATCH'].includes(method)&&!sameOrigin(request)&&!fileOrigin)return reply({message:'Solicitud no permitida.'},403);
+  if(['POST','PATCH'].includes(method)&&(!env.FORM_LIMIT||!(await env.FORM_LIMIT.limit({key:'cms-write:'+request.headers.get('CF-Connecting-IP')})).success))return reply({message:'Espera un minuto antes de guardar otra vez.'},429);
   if(path==='/equipo/activar'&&method==='POST'){
    let admin;try{admin=await (dependencies.bootstrapIdentity||identity)(request,env);}catch{return reply({message:'Verifica tu cuenta de administrador para activar el acceso.'},403);}
    const v=await jsonBody(request);
@@ -45,6 +50,42 @@ export async function cms(request,env,fetcher=fetch,dependencies={}) {
   }
   let user;try{user=await (dependencies.authenticate||cmsIdentity)(request,env,auth);}catch{return reply({message:'Inicia sesión con una cuenta autorizada.'},401);}
   if(path==='/cms/api/me'&&method==='GET')return reply({name:user.name,email:user.email,role:user.role,modules:user.modules,canUpdate:env.CMS_AGENDA_EDIT_ENABLED==='true'});
+  if(fileRoute&&method==='POST'){const result=await uploadFile(request,env,user,fileRoute[1],fileRoute[2],fetcher);await recordUpdate(env,user,fileRoute[1],result.record.id,'updated',{source:'cms',operation:'file_upload'});return reply(result);}
+  if(path==='/cms/api/updates'&&method==='GET')return reply({updates:await recentUpdates(env,user)});
+  if(path==='/cms/api/modules'&&method==='GET')return reply({modules:Object.entries(modules).filter(([,m])=>can(user,m.permission)).map(([key,m])=>({key,label:m.label,permission:m.permission,enabled:enabled(key,env),canWrite:can(user,m.permission,true),fields:m.fields.map(f=>({...f,readOnly:!!f.readOnly||!!f.target&&!can(user,modulePermission(f.target))}))}))});
+  if(path==='/cms/api/connections'&&method==='GET'){
+   if(user.role!=='admin')return reply({message:'Acceso restringido.'},403);
+   const connections=[];for(const [key,m] of Object.entries(modules)){try{const source=await notion(env,'data_sources/'+m.id,{},fetcher);const missing=m.fields.filter(f=>!source.properties?.[f.name]);connections.push({key,label:m.label,ok:!missing.length,enabled:enabled(key,env),message:missing.length?'Hay campos que cambiaron en Notion.':'Conexión de lectura verificada.'});}catch(e){connections.push({key,label:m.label,ok:false,enabled:enabled(key,env),message:e.message});}}
+   return reply({connections});
+  }
+  const lookup=path.match(/^\/cms\/api\/lookup\/([a-z]+)$/);
+  if(lookup&&method==='GET'){
+   const key=lookup[1],permission=modulePermission(key);if(!permission||!can(user,permission))return reply({message:'Acceso restringido.'},403);
+   if(key!=='agenda'&&!enabled(key,env))return reply({message:'La base relacionada todavía no está conectada.'},503);
+   const url=new URL(request.url),cursor=url.searchParams.get('cursor'),q=url.searchParams.get('q')||'';if(q.length>150||cursor&&!/^[a-f0-9-]{36}$/i.test(cursor))return reply({message:'Consulta no válida.'},400);
+   const title=key==='agenda'?'Name':modules[key].fields.find(f=>f.type==='title').name;
+   const data=await notion(env,'data_sources/'+sourceId(key,env)+'/query',{method:'POST',body:JSON.stringify({page_size:50,...(cursor?{start_cursor:cursor}:{}),...(q?{filter:{property:title,title:{contains:q}}}:{})})},fetcher);
+   return reply({options:data.results.map(p=>({id:p.id,label:plain(p.properties?.[title]?.title)})),nextCursor:data.has_more?data.next_cursor:null});
+  }
+  const related=path.match(/^\/cms\/api\/related\/([a-z]+)\/([a-f0-9-]{36})$/i);
+  if(related&&method==='GET'){
+   const key=related[1],id=related[2],definition=modules[key],permission=modulePermission(key);
+   if(!permission||!can(user,permission)||key!=='agenda'&&!definition)return reply({message:'Acceso restringido.'},403);
+   if(key!=='agenda'&&!enabled(key,env))return reply({message:'Esta sección está pendiente de conectar.'},503);
+   const parent=await notion(env,'pages/'+id,{},fetcher);if(!belongs(parent,sourceId(key,env)))return reply({message:'Registro no disponible.'},404);
+   const groups=[];
+   for(const [childKey,child] of Object.entries(modules)){
+    if(!enabled(childKey,env)||!can(user,child.permission))continue;
+    const relations=child.fields.filter(f=>f.type==='relation'&&f.target===key);if(!relations.length)continue;
+    const filter=relations.length===1?{property:relations[0].name,relation:{contains:id}}:{or:relations.map(f=>({property:f.name,relation:{contains:id}}))};
+    const data=await notion(env,'data_sources/'+child.id+'/query',{method:'POST',body:JSON.stringify({page_size:20,filter})},fetcher);
+    const title=child.fields.find(f=>f.type==='title');
+    groups.push({key:childKey,label:child.label,records:data.results.map(page=>({id:page.id,label:plain(page.properties?.[title.name]?.title),version:page.last_edited_time}))});
+   }
+   return reply({related:groups});
+  }
+  const recordRoute=path.match(/^\/cms\/api\/records\/([a-z]+)(?:\/([a-f0-9-]{36}))?$/i);
+  if(recordRoute){const result=await records(request,env,user,recordRoute[1],recordRoute[2],method==='GET'?null:await jsonBody(request),fetcher);if(method!=='GET')await recordUpdate(env,user,recordRoute[1],result.record.id,method==='POST'?'created':'updated',{source:'cms',operation:method.toLowerCase()});return reply(result,method==='POST'?201:200);}
   if(path==='/cms/api/invitations'&&method==='POST'){
    if(user.role!=='admin')return reply({message:'Solo administración puede invitar.'},403);
    let v;try{v=invitationInput(await jsonBody(request));}catch{return reply({message:'Revisa el correo y los permisos.'},400);}
@@ -71,8 +112,8 @@ export async function cms(request,env,fetcher=fetch,dependencies={}) {
    if(!can(user,'agenda',method!=='GET'))return reply({message:'Tu cuenta no puede realizar esta acción.'},403);
    const url=new URL(request.url);url.pathname=url.pathname.replace('/cms/api','/equipo/api');
    const headers=new Headers(request.headers);headers.set('X-Comarca-Request','team');
-   return team(new Request(url,new Request(request,{headers})),env,fetcher,async()=>user);
+   const response=await team(new Request(url,new Request(request,{headers})),env,fetcher,async()=>user);if(response.ok&&method!=='GET'){const saved=await response.clone().json();await recordUpdate(env,user,'agenda',saved.id,method==='POST'?'created':'updated',{source:'cms',operation:method.toLowerCase()});}return response;
   }
   return reply({message:'Ruta no disponible.'},404);
- }catch{return reply({message:'No se pudo completar la operación. Si intentabas crear una cuenta, comprueba tu invitación o pide ayuda al administrador.'},400);}
+ }catch(error){if(error instanceof RecordError)return reply({message:error.message},error.status);return reply({message:'No se pudo completar la operación. Si intentabas crear una cuenta, comprueba tu invitación o pide ayuda al administrador.'},400);}
 }

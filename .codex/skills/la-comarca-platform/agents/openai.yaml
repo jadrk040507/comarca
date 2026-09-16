@@ -1,0 +1,4 @@
+interface:
+  display_name: "La Comarca Platform"
+  short_description: "Project architecture and operating rules"
+  default_prompt: "Use the La Comarca platform guidance for repository work."

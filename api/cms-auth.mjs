@@ -17,7 +17,7 @@ export async function cmsIdentity(request,env,auth=createAuth(env)) {
  const session=await auth.api.getSession({headers:request.headers});
  if(!session)throw Error('session');
  const email=session.user.email.toLowerCase();
- if(email===env.TEAM_ADMIN_ACCOUNT?.toLowerCase())return {...session.user,email,role:'admin',modules:['agenda']};
+ if(email===env.TEAM_ADMIN_ACCOUNT?.toLowerCase())return {...session.user,email,role:'admin',modules:['agenda','materiales','catecismo','traslados','inscripciones']};
  const grant=await env.CMS_DB.prepare('SELECT role, modules FROM cms_grants WHERE email = ? AND active = 1').bind(email).first();
  if(!grant)throw Error('permission');
  return {...session.user,email,role:grant.role,modules:JSON.parse(grant.modules)};

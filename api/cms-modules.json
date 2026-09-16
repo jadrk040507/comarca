@@ -1,0 +1,585 @@
+{
+  "materials": {
+    "id": "3d479aad-5d83-8070-9fd9-000bf47c7e00",
+    "label": "Materiales y archivo",
+    "permission": "materiales",
+    "fields": [
+      {
+        "name": "Name",
+        "label": "Nombre",
+        "type": "title"
+      },
+      {
+        "name": "Categoría",
+        "label": "Categoría",
+        "type": "select",
+        "options": [
+          "Clase y guion",
+          "Flyer",
+          "Prompt",
+          "Marca",
+          "Logística"
+        ]
+      },
+      {
+        "name": "Vigencia",
+        "label": "Vigencia",
+        "type": "select",
+        "options": [
+          "Borrador",
+          "Vigente",
+          "Histórico"
+        ]
+      },
+      {
+        "name": "Enlace",
+        "label": "Enlace",
+        "type": "url"
+      },
+      {
+        "name": "Archivo",
+        "label": "Archivo",
+        "type": "file",
+        "readOnly": true
+      },
+      {
+        "name": "Resumen público",
+        "label": "Resumen público",
+        "type": "text"
+      },
+      {
+        "name": "Publicar en web",
+        "label": "Publicar en web",
+        "type": "checkbox"
+      },
+      {
+        "name": "Revisión",
+        "label": "Revisión",
+        "type": "date"
+      },
+      {
+        "name": "Agenda",
+        "label": "Agenda",
+        "type": "relation",
+        "target": "agenda"
+      }
+    ]
+  },
+  "transport": {
+    "id": "3d479aad-5d83-80c5-b022-000b1ff57146",
+    "label": "Traslados",
+    "permission": "traslados",
+    "fields": [
+      {
+        "name": "Name",
+        "label": "Nombre",
+        "type": "title"
+      },
+      {
+        "name": "Conductor",
+        "label": "Conductor",
+        "type": "text"
+      },
+      {
+        "name": "Trayecto",
+        "label": "Trayecto",
+        "type": "select",
+        "options": [
+          "Ida",
+          "Regreso"
+        ]
+      },
+      {
+        "name": "Fecha",
+        "label": "Fecha",
+        "type": "date"
+      },
+      {
+        "name": "Punto de salida",
+        "label": "Punto de salida",
+        "type": "text"
+      },
+      {
+        "name": "Capacidad",
+        "label": "Capacidad",
+        "type": "number"
+      },
+      {
+        "name": "Casetas MXN",
+        "label": "Casetas MXN",
+        "type": "number"
+      },
+      {
+        "name": "Estado",
+        "label": "Estado",
+        "type": "select",
+        "options": [
+          "Por coordinar",
+          "Confirmado",
+          "Cancelado"
+        ]
+      },
+      {
+        "name": "Agenda",
+        "label": "Agenda",
+        "type": "relation",
+        "target": "agenda"
+      }
+    ]
+  },
+  "students": {
+    "id": "435ebda7-a84c-4947-9fb6-75bbd8f0e885",
+    "label": "Alumnos",
+    "permission": "catecismo",
+    "fields": [
+      {
+        "name": "Alumno",
+        "label": "Alumno",
+        "type": "title"
+      },
+      {
+        "name": "Estatus",
+        "label": "Estatus",
+        "type": "select",
+        "options": [
+          "Por incorporar",
+          "Activo",
+          "En pausa",
+          "Baja",
+          "Concluido"
+        ]
+      },
+      {
+        "name": "Grupo o nivel",
+        "label": "Grupo o nivel",
+        "type": "text"
+      },
+      {
+        "name": "Ciclo",
+        "label": "Ciclo",
+        "type": "text"
+      },
+      {
+        "name": "Edad",
+        "label": "Edad",
+        "type": "number"
+      },
+      {
+        "name": "Catequista referente",
+        "label": "Catequista referente",
+        "type": "text"
+      },
+      {
+        "name": "Tutor responsable",
+        "label": "Tutor responsable",
+        "type": "text"
+      },
+      {
+        "name": "Teléfono del tutor",
+        "label": "Teléfono del tutor",
+        "type": "phone_number"
+      },
+      {
+        "name": "Correo del tutor",
+        "label": "Correo del tutor",
+        "type": "email"
+      },
+      {
+        "name": "Fecha de ingreso",
+        "label": "Fecha de ingreso",
+        "type": "date"
+      },
+      {
+        "name": "Fecha de baja",
+        "label": "Fecha de baja",
+        "type": "date"
+      },
+      {
+        "name": "Observaciones educativas",
+        "label": "Observaciones educativas",
+        "type": "text"
+      }
+    ]
+  },
+  "attendance": {
+    "id": "ce4b9f4b-bc51-4a15-8511-9e2054c8096c",
+    "label": "Pase de lista",
+    "permission": "catecismo",
+    "fields": [
+      {
+        "name": "Registro",
+        "label": "Registro",
+        "type": "title"
+      },
+      {
+        "name": "Alumno",
+        "label": "Alumno",
+        "type": "relation",
+        "target": "students"
+      },
+      {
+        "name": "Sesión",
+        "label": "Sesión",
+        "type": "relation",
+        "target": "agenda"
+      },
+      {
+        "name": "Asistencia",
+        "label": "Asistencia",
+        "type": "select",
+        "options": [
+          "Por registrar",
+          "Presente",
+          "Retardo",
+          "Falta justificada",
+          "Falta"
+        ]
+      },
+      {
+        "name": "Observación",
+        "label": "Observación",
+        "type": "text"
+      }
+    ]
+  },
+  "lessons": {
+    "id": "7d162e1c-d87a-4733-8c06-d1180e46ff80",
+    "label": "Clases y actividades",
+    "permission": "catecismo",
+    "fields": [
+      {
+        "name": "Actividad",
+        "label": "Actividad",
+        "type": "title"
+      },
+      {
+        "name": "Tipo",
+        "label": "Tipo",
+        "type": "select",
+        "options": [
+          "En clase",
+          "Tarea",
+          "Proyecto",
+          "Evaluación"
+        ]
+      },
+      {
+        "name": "Estado",
+        "label": "Estado",
+        "type": "select",
+        "options": [
+          "Borrador",
+          "Preparada",
+          "Asignada",
+          "Cerrada"
+        ]
+      },
+      {
+        "name": "Grupo o nivel",
+        "label": "Grupo o nivel",
+        "type": "text"
+      },
+      {
+        "name": "Responsable",
+        "label": "Responsable",
+        "type": "text"
+      },
+      {
+        "name": "Sesión",
+        "label": "Sesión",
+        "type": "relation",
+        "target": "agenda"
+      },
+      {
+        "name": "Tema",
+        "label": "Tema",
+        "type": "relation",
+        "target": "topics"
+      },
+      {
+        "name": "Recursos",
+        "label": "Recursos",
+        "type": "relation",
+        "target": "materials"
+      },
+      {
+        "name": "Instrucciones",
+        "label": "Instrucciones",
+        "type": "text"
+      },
+      {
+        "name": "Criterios de evaluación",
+        "label": "Criterios de evaluación",
+        "type": "text"
+      },
+      {
+        "name": "Entrega",
+        "label": "Entrega",
+        "type": "date"
+      }
+    ]
+  },
+  "grades": {
+    "id": "193f93af-83be-4e3f-a6da-1ce8348a0466",
+    "label": "Entregas y calificaciones",
+    "permission": "catecismo",
+    "fields": [
+      {
+        "name": "Resultado",
+        "label": "Resultado",
+        "type": "title"
+      },
+      {
+        "name": "Alumno",
+        "label": "Alumno",
+        "type": "relation",
+        "target": "students"
+      },
+      {
+        "name": "Actividad",
+        "label": "Actividad",
+        "type": "relation",
+        "target": "lessons"
+      },
+      {
+        "name": "Estado",
+        "label": "Estado",
+        "type": "select",
+        "options": [
+          "Pendiente",
+          "Entregado",
+          "Revisado",
+          "Por completar",
+          "No aplica"
+        ]
+      },
+      {
+        "name": "Calificación 0–10",
+        "label": "Calificación 0–10",
+        "type": "number"
+      },
+      {
+        "name": "Avance",
+        "label": "Avance",
+        "type": "select",
+        "options": [
+          "Por trabajar",
+          "En proceso",
+          "Logrado"
+        ]
+      },
+      {
+        "name": "Evaluado por",
+        "label": "Evaluado por",
+        "type": "text"
+      },
+      {
+        "name": "Retroalimentación",
+        "label": "Retroalimentación",
+        "type": "text"
+      },
+      {
+        "name": "Próxima acción",
+        "label": "Próxima acción",
+        "type": "text"
+      },
+      {
+        "name": "Fecha de entrega",
+        "label": "Fecha de entrega",
+        "type": "date"
+      },
+      {
+        "name": "Fecha de seguimiento",
+        "label": "Fecha de seguimiento",
+        "type": "date"
+      },
+      {
+        "name": "Evidencia",
+        "label": "Evidencia",
+        "type": "file",
+        "readOnly": true
+      }
+    ]
+  },
+  "topics": {
+    "id": "b188a44d-5004-4305-80e8-c5133fb520cc",
+    "label": "Temas",
+    "permission": "catecismo",
+    "fields": [
+      {
+        "name": "Tema",
+        "label": "Tema",
+        "type": "title"
+      },
+      {
+        "name": "Orden",
+        "label": "Orden",
+        "type": "number"
+      },
+      {
+        "name": "Estado",
+        "label": "Estado",
+        "type": "select",
+        "options": [
+          "Por definir",
+          "En preparación",
+          "Listo",
+          "Impartido"
+        ]
+      },
+      {
+        "name": "Nivel o grupo",
+        "label": "Nivel o grupo",
+        "type": "text"
+      },
+      {
+        "name": "Objetivo",
+        "label": "Objetivo",
+        "type": "text"
+      },
+      {
+        "name": "Recursos",
+        "label": "Recursos",
+        "type": "relation",
+        "target": "materials"
+      },
+      {
+        "name": "Sesiones",
+        "label": "Sesiones",
+        "type": "relation",
+        "target": "agenda"
+      }
+    ]
+  },
+  "shifts": {
+    "id": "d6649cab-00af-4872-8318-49f5a76b3424",
+    "label": "Turnos de catequistas",
+    "permission": "catecismo",
+    "fields": [
+      {
+        "name": "Turno",
+        "label": "Turno",
+        "type": "title"
+      },
+      {
+        "name": "Catequista",
+        "label": "Catequista",
+        "type": "text"
+      },
+      {
+        "name": "Función",
+        "label": "Función",
+        "type": "select",
+        "options": [
+          "Impartir tema",
+          "Apoyo",
+          "Coordinación"
+        ]
+      },
+      {
+        "name": "Confirmación",
+        "label": "Confirmación",
+        "type": "select",
+        "options": [
+          "Por asignar",
+          "Invitado",
+          "Confirmado",
+          "No disponible"
+        ]
+      },
+      {
+        "name": "Necesita ride",
+        "label": "Necesita ride",
+        "type": "checkbox"
+      },
+      {
+        "name": "Sesión",
+        "label": "Sesión",
+        "type": "relation",
+        "target": "agenda"
+      },
+      {
+        "name": "Temas",
+        "label": "Temas",
+        "type": "relation",
+        "target": "topics"
+      },
+      {
+        "name": "Notas",
+        "label": "Notas",
+        "type": "text"
+      }
+    ]
+  },
+  "registrations": {
+    "id": "3d479aad-5d83-8055-a2d6-000b045a7d89",
+    "label": "Inscripciones",
+    "permission": "inscripciones",
+    "fields": [
+      {
+        "name": "Nombre y apellido",
+        "label": "Nombre y apellido",
+        "type": "title"
+      },
+      {
+        "name": "Actividad solicitada",
+        "label": "Actividad solicitada",
+        "type": "select",
+        "options": [
+          "Retiro mensual · 1 octubre 2026",
+          "Retiro semestral · 16–18 octubre 2026",
+          "Círculos",
+          "Catecismo",
+          "Otras actividades"
+        ]
+      },
+      {
+        "name": "Agenda",
+        "label": "Agenda",
+        "type": "relation",
+        "target": "agenda"
+      },
+      {
+        "name": "Estado",
+        "label": "Estado",
+        "type": "select",
+        "options": [
+          "Solicitada",
+          "Confirmada",
+          "Lista de espera",
+          "Cancelada"
+        ]
+      },
+      {
+        "name": "Correo",
+        "label": "Correo",
+        "type": "email"
+      },
+      {
+        "name": "WhatsApp",
+        "label": "WhatsApp",
+        "type": "phone_number"
+      },
+      {
+        "name": "Contacto",
+        "label": "Contacto",
+        "type": "text"
+      },
+      {
+        "name": "Fecha",
+        "label": "Fecha",
+        "type": "date"
+      },
+      {
+        "name": "Asistencia",
+        "label": "Asistencia",
+        "type": "checkbox"
+      },
+      {
+        "name": "Horas verificadas",
+        "label": "Horas verificadas",
+        "type": "number"
+      }
+    ]
+  }
+}

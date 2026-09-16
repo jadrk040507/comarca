@@ -22,8 +22,8 @@ jobs:
           node-version: '22'
       - name: Instalar dependencias del panel
         run: npm ci --prefix api
-      - name: Verificar exportación y calendario
-        run: npm test
+      - name: Verificar código, exportación y calendario
+        run: npm run check
       - name: Sincronizar exclusivamente contenido público
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}

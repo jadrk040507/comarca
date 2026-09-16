@@ -1,0 +1,29 @@
+name: Verificar y desplegar Worker de La Comarca
+on:
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: Desplegar el Worker después de pasar las verificaciones
+        required: true
+        default: false
+        type: boolean
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar dependencias del Worker
+        run: npm ci --prefix api
+      - name: Verificar código y pruebas
+        run: npm run check
+      - name: Verificar configuración Wrangler
+        run: npx --prefix api wrangler deploy --dry-run
+      - name: Desplegar Worker
+        if: inputs.deploy == true
+        run: npx --prefix api wrangler deploy
