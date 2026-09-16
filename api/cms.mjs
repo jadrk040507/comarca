@@ -4,6 +4,7 @@ import {createAuth,cmsIdentity,can,digest} from './cms-auth.mjs';
 import {identity,team} from './team.mjs';
 import {cmsHTML,cmsJS} from './cms-ui.mjs';
 import {modules,permissionKeys,modulePermission,sourceId,enabled,records,notion,plain,belongs,RecordError} from './cms-records.mjs';
+import {supabaseRequest} from './supabase.mjs';
 
 const security={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Content-Security-Policy':"default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; connect-src 'self'; img-src 'self' https://la-comarca.github.io; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"};
 const reply=(data,status=200,type='application/json')=>new Response(type==='application/json'?JSON.stringify(data):data,{status,headers:{...security,'Content-Type':type+';charset=utf-8'}});
@@ -60,6 +61,12 @@ export async function cms(request,env,fetcher=fetch,dependencies={}) {
   }
   let user;try{user=await (dependencies.authenticate||cmsIdentity)(request,env,auth);}catch{return reply({message:'Inicia sesión con una cuenta autorizada.'},401);}
   if(path==='/cms/api/me'&&method==='GET')return reply({name:user.name,email:user.email,role:user.role,modules:user.modules,canUpdate:env.CMS_AGENDA_EDIT_ENABLED==='true'});
+  if(path==='/cms/api/supabase-status'&&method==='GET'){
+   if(user.role!=='admin')return reply({message:'Acceso restringido.'},403);
+   if(!env.SUPABASE_URL||!env.SUPABASE_SERVICE_ROLE_KEY)return reply({configured:false,healthy:false});
+   try{await supabaseRequest(env,'rest/v1/workspaces?select=key&limit=1');return reply({configured:true,healthy:true});}
+   catch{return reply({configured:true,healthy:false});}
+  }
   if(fileRoute&&method==='POST'){const result=await uploadFile(request,env,user,fileRoute[1],fileRoute[2],fetcher);await recordUpdate(env,user,fileRoute[1],result.record.id,'updated',{source:'cms',operation:'file_upload'});return reply(result);}
   if(path==='/cms/api/updates'&&method==='GET')return reply({updates:await recentUpdates(env,user)});
   if(path==='/cms/api/modules'&&method==='GET')return reply({modules:Object.entries(modules).filter(([,m])=>can(user,m.permission)).map(([key,m])=>({key,label:m.label,permission:m.permission,enabled:enabled(key,env),canWrite:can(user,m.permission,true),fields:m.fields.map(f=>({...f,readOnly:!!f.readOnly||!!f.target&&!can(user,modulePermission(f.target))}))}))});

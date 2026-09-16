@@ -30,10 +30,18 @@
   },
   "observability": {
     "enabled": true,
-    "head_sampling_rate": 0.1
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 0.1
+    }
   },
   "vars": {
     "CMS_ORIGIN": "https://comarca.kipadmon.com",
+    "SUPABASE_URL": "https://towouvaslpawbdzvksjo.supabase.co",
     "ALLOWED_ORIGINS": "https://comarca.kipadmon.com,https://la-comarca.github.io,https://jadrk040507.github.io,https://la-comarca-formularios.la-comarca.workers.dev",
     "PUBLIC_AGENDA_SOURCE": "notion",
     "CMS_CONNECTED_MODULES": "materials,transport,students,attendance,lessons,grades,topics,shifts,registrations",
