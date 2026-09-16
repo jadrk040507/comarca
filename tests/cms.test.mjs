@@ -21,6 +21,13 @@ test('native login: closed signup, no anonymous data, valid password session and
  assert.equal((await cms(req('/cms/auth/sign-out',{}, {Cookie:cookie}),env,fetch,{auth})).status,200);
  assert.equal((await cms(req('/cms/api/me',null,{Cookie:cookie}),env,fetch,{auth})).status,401);
 });
+test('administrator can securely replace a forgotten first password after Access verification',async()=>{
+ const replacement='A-replaced-local-password-2026';
+ const reset=await cms(req('/equipo/activar',{password:replacement}),env,fetch,{auth,bootstrapIdentity:async()=>({email:env.TEAM_ADMIN_ACCOUNT})});
+ assert.equal(reset.status,200,await reset.clone().text());
+ assert.equal((await cms(req('/cms/auth/sign-in/email',{email:env.TEAM_ADMIN_ACCOUNT,password:'A-local-test-password-2026'}),env,fetch,{auth})).status,401);
+ assert.equal((await cms(req('/cms/auth/sign-in/email',{email:env.TEAM_ADMIN_ACCOUNT,password:replacement}),env,fetch,{auth})).status,200);
+});
 test('cross-origin auth and unsigned admin activation fail closed',async()=>{
  assert.equal((await cms(req('/cms/auth/sign-in/email',{}, {Origin:'https://evil.example'}),env,fetch,{auth})).status,403);
  assert.equal((await cms(req('/equipo/activar',{password:'another-password'}),env,fetch,{auth})).status,403);

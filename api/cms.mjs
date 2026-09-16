@@ -37,6 +37,16 @@ export async function cms(request,env,fetcher=fetch,dependencies={}) {
   if(path==='/equipo/activar'&&method==='POST'){
    let admin;try{admin=await (dependencies.bootstrapIdentity||identity)(request,env);}catch{return reply({message:'Verifica tu cuenta de administrador para activar el acceso.'},403);}
    const v=await jsonBody(request);
+   if(typeof v.password!=='string'||v.password.length<12||v.password.length>128)return reply({message:'Usa una contraseña de entre 12 y 128 caracteres.'},400);
+   // Cloudflare Access has already verified the sole administrator's identity.
+   // Let that proof safely recover a forgotten first password without exposing
+   // account existence or accepting a client-provided email address.
+   const context=await auth.$context,existing=await context.internalAdapter.findUserByEmail(admin.email);
+   if(existing?.user){
+    await context.internalAdapter.updatePassword(existing.user.id,await context.password.hash(v.password));
+    await context.internalAdapter.deleteUserSessions(existing.user.id);
+    return reply({message:'Acceso actualizado. Entra ahora con tu correo y la nueva contraseña.'});
+   }
    await auth.api.signUpEmail({body:{email:admin.email,name:'Administrador',password:v.password}});
    return reply({message:'Cuenta creada. Ya puedes entrar con tu correo y contraseña en el nuevo panel.'},201);
   }
