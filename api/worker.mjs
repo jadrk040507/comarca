@@ -22,6 +22,7 @@ export async function handle(request,env,fetcher=fetch){
  const path=new URL(request.url).pathname;
  if(path==='/public/materials')return publicMaterials(request,env,fetcher,typeof caches==='undefined'?undefined:caches.default);
  if(path==='/cms'||path.startsWith('/cms/')||path==='/equipo/activar')return cms(request,env,fetcher);
+ if(path==='/equipo'||path==='/equipo/')return Response.redirect(new URL('/cms/',request.url),302);
  if(new URL(request.url).pathname==='/equipo'||new URL(request.url).pathname.startsWith('/equipo/'))return team(request,env,fetcher);
  if(['/public/agenda','/calendario.ics'].includes(new URL(request.url).pathname))return publicAgenda(request,env,fetcher);
  // Static Assets owns the public site. Only safe read requests that did not
