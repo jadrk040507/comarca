@@ -2,19 +2,28 @@
 
 This repository contains the public La Comarca site and its Cloudflare Worker-backed team platform. Read `.codex/skills/la-comarca-platform/SKILL.md` for project-specific rules and load only the linked references relevant to the change.
 
-## Regla obligatoria: toda edición debe llegar a producción
+## Regla obligatoria: publicar y verificar cada entrega
 
-**SIEMPRE que se edite algo en este repositorio, hay que actualizar y verificar `https://comarca.kipadmon.com`. Esto aplica a cambios pequeños y grandes, cambios FULL, diseño, contenido, CMS, API, configuración, pruebas, documentación y este mismo AGENTS.md.**
+**SIEMPRE que se edite algo, publicar y verificar la entrega correspondiente. Por decisión del usuario, la web pública se publica mediante GitHub Pages; no requiere un token de Cloudflare. Esto incluye cambios pequeños, cambios FULL, diseño, contenido, configuración, pruebas, documentación y este mismo AGENTS.md.**
 
-- Una entrega no está terminada con guardar archivos, hacer un commit, abrir un PR, pasar las pruebas o publicar únicamente GitHub Pages. El dominio canónico de producción es `https://comarca.kipadmon.com`.
-- Agrupar las ediciones de una misma tarea en una entrega coherente y comprobada. Publicar la versión aprobada de `main`; no desplegar ramas de trabajo ni estados intermedios que rompan la aplicación.
-- Ejecutar desde la **raíz del repositorio** (no existe un directorio `web` en esta estructura): `npm ci --prefix api` y `BASE_PATH=/ PLATFORM_ORIGIN=https://comarca.kipadmon.com npm run check`. El check incluye sintaxis, pruebas y construcción del sitio público.
-- Usar `.github/workflows/worker.yml` para desplegar el Worker **junto con los assets recién construidos de `dist`**. `api/wrangler.jsonc` vincula ambos con `comarca.kipadmon.com`. El flujo de GitHub Pages en `portal.yml` no sustituye este despliegue.
-- Comprobar que el workflow correspondiente al commit entregado termina correctamente, que el paso de despliegue realmente se ejecutó (no omitido) y que el dominio sirve esa versión. Verificar portada, assets, acceso al CMS y las rutas o flujos afectados; HTTP 200 por sí solo no demuestra que esté publicado el último cambio.
-- Si se necesita el procedimiento manual autorizado: construir primero desde la raíz y, desde `api`, revisar/aplicar las migraciones pendientes con `npx wrangler d1 migrations apply la-comarca-cms --remote` y desplegar con `npx wrangler deploy --keep-vars`. Nunca desplegar un `dist` antiguo ni reemplazar secretos o variables remotas a ciegas.
-- Revisar compatibilidad, respaldo y reversión de cualquier nueva migración antes de incorporarla a `main`. Esta regla de publicación no autoriza migraciones destructivas, cambios de DNS, exposición de datos ni saltarse autenticación, permisos o pruebas.
-- Si faltan credenciales, permisos, conectividad o falla una verificación: conservar la última versión sana, indicar el bloqueo concreto y distinguir **código guardado**, **despliegue ejecutado** y **producción verificada**. No afirmar que el sitio está actualizado sin evidencia ni dar la tarea por completamente terminada.
-- En la entrega final indicar commit, verificaciones ejecutadas y resultado real de la publicación en el dominio. No asumir que otro agente publicará después.
+### Dos destinos distintos; no confundirlos
+
+- **Web pública:** `.github/workflows/portal.yml` construye y publica automáticamente cada push a `main` en GitHub Pages. La dirección actual de este repositorio es `https://jadrk040507.github.io/comarca/`; la URL efectiva de cada publicación es `steps.deployment.outputs.page_url`.
+- **Backend y CMS:** siguen en el Worker existente, con entrada `https://comarca.kipadmon.com/cms`. GitHub Pages sólo aloja archivos estáticos: no ejecuta el Worker, autenticación, permisos, operaciones de D1 ni escrituras privadas en Notion. No copiar secretos ni datos privados al sitio para intentar sustituir el backend.
+- **Dominio solicitado:** mantener `https://comarca.kipadmon.com` como objetivo de la migración pública, pero no afirmar que se actualiza con Pages mientras siga conectado al Worker. Cambiar de hosting no cambia DNS ni libera un Custom Domain. No mover ese dominio sin separar y verificar primero el hostname y la autenticación del backend. Ver `docs/github-pages.md`.
+- Esta distinción sustituye la anterior exigencia de desplegar Cloudflare después de toda edición pública. No elimina la obligación de desplegar cambios reales del backend ni autoriza describir una migración parcial como completa.
+
+### Verificación y publicación
+
+- Agrupar las ediciones de una tarea en una entrega coherente. Publicar la versión revisada de `main`; no desplegar ramas ni estados intermedios que rompan la aplicación.
+- Ejecutar desde la **raíz del repositorio**, no desde `web`: `npm ci --prefix api` y `npm run check`. El check incluye sintaxis, pruebas y un build raíz. El workflow también construye con el `BASE_PATH` real que obtiene de `actions/configure-pages`.
+- Mantener `PLATFORM_ORIGIN` apuntando al backend existente; no reemplazarlo por el origen estático de Pages. Conservar `REGISTRATION_API`, Turnstile y las demás integraciones públicas ya configuradas. Publicar sólo `dist`, nunca la raíz del repositorio.
+- Para cada entrega pública, comprobar que `portal.yml` termina correctamente, que el paso de despliegue se ejecutó y que `deployment.json` en la URL publicada coincide con el commit y la ejecución de Actions. Verificar portada, assets y rutas afectadas; HTTP 200 por sí solo no demuestra que esté publicada la última entrega.
+- Si cambia `api/`, autenticación, permisos, esquema o configuración del Worker, ejecutar además el flujo **manual** `.github/workflows/worker.yml` desde `main` con `deploy=true`, después de revisar pruebas y migraciones. Requiere la credencial autorizada de Cloudflare; un despliegue de Pages no publica esos cambios.
+- El procedimiento manual autorizado del Worker sigue requiriendo un `dist` recién construido con `BASE_PATH=/`, revisión de migraciones y, desde `api`, `npx wrangler d1 migrations apply la-comarca-cms --remote` y `npx wrangler deploy --keep-vars`. No desplegar assets obsoletos ni reemplazar variables remotas a ciegas.
+- Revisar compatibilidad, respaldo y reversión antes de nuevas migraciones. Esta regla no autoriza cambios destructivos, exposición de datos ni omitir controles de acceso o pruebas.
+- Si falta una credencial o falla una verificación, conservar la última versión sana y reportar el bloqueo concreto. Distinguir **código guardado**, **web publicada en Pages**, **backend desplegado** y **dominio migrado**. No afirmar que el dominio o el CMS reflejan un commit publicado únicamente en Pages.
+- En la entrega final indicar commit, pruebas, URL real publicada y resultado verificado. Los cambios de backend pendientes de despliegue y la migración del dominio deben permanecer explícitamente pendientes.
 
 ## Recuperar y preservar el diseño existente
 
@@ -32,5 +41,5 @@ This repository contains the public La Comarca site and its Cloudflare Worker-ba
 - Treat server-side authentication and authorization as the source of access decisions; do not rely on UI visibility.
 - Preserve the existing static-site and Worker architecture unless an audited change proves a smaller incremental design cannot meet the requirement.
 - Use Notion as an integration boundary, not as an excuse to couple every UI component directly to its API.
-- Run `npm test` from the repository root, and `BASE_PATH=/ npm run build` for public build verification when applicable; the full delivery gate is `npm run check` plus production deployment and verification as specified above.
+- Run `npm test` from the repository root and verify the public build for the actual deployment base path. Public Pages verification is not evidence of a backend deployment or an authenticated CMS acceptance test.
 - Do not print or commit secrets, `.dev.vars`, `.env*`, tokens, private Notion payloads, or personal data.

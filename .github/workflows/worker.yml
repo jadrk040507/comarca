@@ -1,11 +1,9 @@
-name: Verificar y desplegar Worker de La Comarca
+name: Verificar y desplegar backend de La Comarca (manual)
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
     inputs:
       deploy:
-        description: Desplegar producción después de pasar las verificaciones (sólo main)
+        description: Desplegar el Worker después de pasar las verificaciones (sólo main; requiere Cloudflare)
         required: true
         default: false
         type: boolean
@@ -45,19 +43,19 @@ jobs:
         working-directory: api
         run: npx wrangler deploy --dry-run
       - name: Desplegar Worker y sitio en comarca.kipadmon.com
-        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || inputs.deploy == true)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.deploy == true
         working-directory: api
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           if [ -z "${CLOUDFLARE_API_TOKEN:-}" ]; then
-            echo '::error::Falta el secreto CLOUDFLARE_API_TOKEN. Producción NO se ha actualizado.'
+            echo '::error::Falta el secreto CLOUDFLARE_API_TOKEN. El backend NO se ha actualizado.'
             exit 1
           fi
           npx wrangler d1 migrations apply la-comarca-cms --remote
           npx wrangler deploy --keep-vars
-      - name: Verificar revisión y rutas públicas en producción
-        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || inputs.deploy == true)
+      - name: Verificar revisión y rutas públicas del Worker
+        if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.deploy == true
         run: |
           node --input-type=module <<'NODE'
           import {setTimeout as delay} from 'node:timers/promises';
@@ -102,5 +100,8 @@ jobs:
             if (!(await response.arrayBuffer()).byteLength) throw Error(`Respuesta vacía en ${path}`);
             console.log(`OK ${path}`);
           }
-          console.log(`Producción verificada: ${origin} @ ${expected}`);
+          console.log(`Worker verificado: ${origin} @ ${expected}`);
           NODE
+      - name: Informar que no se solicitó despliegue
+        if: github.ref != 'refs/heads/main' || inputs.deploy != true
+        run: echo 'Verificación solamente. No se desplegó el Worker; la web pública se publica por portal.yml.'

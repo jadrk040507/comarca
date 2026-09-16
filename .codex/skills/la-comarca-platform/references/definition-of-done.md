@@ -1,21 +1,19 @@
 # Definition of done
 
-## Every delivery must update production
+## Publish every delivery to the correct target
 
-**Every repository edit, including documentation, configuration, small fixes and FULL changes, requires deploying and verifying `https://comarca.kipadmon.com`.** Follow the mandatory production rule in the root `AGENTS.md`. Group related edits into a coherent tested delivery; do not ship broken intermediate states.
+**Every edit, including small fixes, documentation and FULL changes, requires publication and verification. The public site now uses GitHub Pages; backend changes still require a separate Worker rollout.** Follow the root `AGENTS.md` and `docs/github-pages.md`.
 
-A commit, pull request, local build, successful dry-run, or GitHub Pages publication alone is not completion. Record the delivered commit, the actual Worker deployment result and verification on the canonical domain. Do not claim production is updated when deployment was skipped or the running version was not checked.
+A commit, PR, local build or dry-run alone is not completion. Report the commit and the actual published URL. A successful Pages deployment does not mean that the Worker, CMS or `comarca.kipadmon.com` was updated. The requested custom-domain migration remains pending until the backend has been safely separated and DNS/Pages configuration and HTTPS have been verified.
 
-For a meaningful change:
+1. Identify the affected public/private boundaries, source-of-truth ownership, permissions, state transitions and migration needs before implementation.
+2. Add or update focused tests appropriate to the change, including failure and stale/concurrency paths. Review the workflow diff when changing deployment automation.
+3. From the repository root, run `npm ci --prefix api` and `npm run check`. The public pipeline must additionally build using the real Pages base path. Preserve backend URLs and public integration variables; never substitute the Pages origin for the API origin without a verified backend migration.
+4. Preserve the visual system from the existing code and history. For UI changes, compare desktop/mobile views and reduced-motion behavior; do not claim these checks passed merely because a build passed.
+5. Review dependencies, secrets, logging, errors and public data exports. Only `dist` may be published; no private records or server credentials belong in static assets.
+6. Publish the approved `main` version using `.github/workflows/portal.yml`. Verify the deployed `deployment.json` commit and build ID, real base path, public pages and assets. A 200 response alone is insufficient.
+7. If the backend changed, separately review migration compatibility, backup/rollback, configuration and manual acceptance checks. Use the manual `.github/workflows/worker.yml` from `main` with `deploy=true` to publish fresh root-path assets and the Worker while preserving remote secrets. A Cloudflare credential is required for this separate operation, not for public Pages publication.
+8. Verify affected authenticated workflows after a backend rollout; static smoke checks do not test sessions, authorization or private writes. Never remove or bypass those features to make Pages appear equivalent to a backend.
+9. Report code committed, public Pages publication, backend rollout and custom-domain migration as distinct states. Preserve the last healthy release and report exact blockers; do not silently leave required backend deployment or domain migration marked complete.
 
-1. Identify affected public/private boundaries, source-of-truth ownership, permissions, state transitions, and migration needs before implementation.
-2. Add or update focused unit/integration/authorization/workflow tests; include failure and stale/concurrency paths.
-3. From the repository root (not `web`), run `npm ci --prefix api` and `BASE_PATH=/ PLATFORM_ORIGIN=https://comarca.kipadmon.com npm run check`. This runs syntax checks, tests and the public build. Inspect generated output for public-facing changes.
-4. Recover and preserve the existing visual system from the code and history. Read `references/ux.md` and the design section of `AGENTS.md`; compare affected desktop/mobile views and reduced-motion behavior when applicable.
-5. Review dependency, secret, logging, error, and data-export impact. Do not treat a rendering check as completion.
-6. Before production rollout, document configuration/secret names (never values), migration order, compatibility, backup/rollback path, observability, and manual acceptance checks. Review new migrations before merging to `main`; deployment requirements do not authorize destructive changes.
-7. Deploy the approved `main` version through `.github/workflows/worker.yml`, including fresh `dist` assets and the Worker described by `api/wrangler.jsonc`. Preserve remote secrets and variables; GitHub Pages is a separate publication target, not a substitute.
-8. Verify the deployment step actually ran for the delivered commit and check the canonical domain, public assets, CMS entry point and affected workflows. An HTTP 200 alone is insufficient evidence of the deployed revision. Report any failed or unavailable checks honestly.
-9. If credentials, permissions, connectivity, tests or deployment checks block delivery, preserve the last healthy release and report the exact blocker. Clearly separate code committed, deployment executed and production verified; the production requirement remains unresolved until verified.
-
-The repository has focused tests and syntax/build gates, plus a Worker verification/deployment workflow. It still lacks a true type-check, lint and browser end-to-end gate. Treat those as backlog items, not silently satisfied requirements. Public smoke checks cannot establish that authenticated CMS workflows or visual regressions have passed.
+The repository has focused unit/integration tests and syntax/build checks. It still lacks a true type-check, lint and browser end-to-end gate. Do not present those backlog items or unperformed visual checks as passed.

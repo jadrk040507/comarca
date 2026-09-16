@@ -1,4 +1,4 @@
-name: Actualizar y publicar La Comarca
+name: Publicar web de La Comarca en GitHub Pages
 on:
   push:
     branches: [main]
@@ -15,11 +15,17 @@ jobs:
     if: github.event_name != 'schedule' || vars.NOTION_SYNC_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Obtener la configuración real de GitHub Pages
+        id: pages
+        uses: actions/configure-pages@v5
       - name: Instalar dependencias del panel
         run: npm ci --prefix api
       - name: Verificar código, exportación y calendario
@@ -36,13 +42,25 @@ jobs:
           else
             echo 'Sincronización pendiente de activar; publicando la edición revisada.'
           fi
-      - name: Preparar la web
+      - name: Preparar la web para GitHub Pages
         env:
-          BASE_PATH: ${{ github.event.repository.name == 'la-comarca.github.io' && '/' || '/comarca/' }}
+          BASE_PATH: "${{ steps.pages.outputs.base_path }}/"
+          PLATFORM_ORIGIN: https://comarca.kipadmon.com
           REGISTRATION_API: ${{ vars.REGISTRATION_API }}
           TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
           ONESIGNAL_APP_ID: ${{ vars.ONESIGNAL_APP_ID }}
         run: npm run build
+      - name: Identificar la publicación estática
+        run: |
+          node --input-type=module <<'NODE'
+          import {writeFile} from 'node:fs/promises';
+          const commit = process.env.GITHUB_SHA;
+          const buildId = `${process.env.GITHUB_RUN_ID}-${process.env.GITHUB_RUN_ATTEMPT}`;
+          if (!/^[a-f0-9]{40}$/i.test(commit || '') || !/^\d+-\d+$/.test(buildId)) {
+            throw Error('Identificador de publicación inválido');
+          }
+          await writeFile('dist/deployment.json', JSON.stringify({target: 'github-pages', commit, buildId}) + '\n');
+          NODE
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
@@ -57,6 +75,68 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Publicar
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Publicar en GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Verificar la versión y las páginas publicadas
+        env:
+          PAGES_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          node --input-type=module <<'NODE'
+          import {setTimeout as delay} from 'node:timers/promises';
+          import {appendFile} from 'node:fs/promises';
+          const expected = process.env.GITHUB_SHA;
+          const buildId = `${process.env.GITHUB_RUN_ID}-${process.env.GITHUB_RUN_ATTEMPT}`;
+          if (!/^[a-f0-9]{40}$/i.test(expected || '') || !/^\d+-\d+$/.test(buildId)) {
+            throw Error('Identificador esperado inválido');
+          }
+          const base = new URL(process.env.PAGES_URL);
+          if (base.protocol !== 'https:' || base.username || base.password || base.search || base.hash) {
+            throw Error('URL de Pages inválida');
+          }
+          if (!base.pathname.endsWith('/')) base.pathname += '/';
+          async function read(path, type) {
+            const url = new URL(path, base);
+            url.searchParams.set('verify', buildId + '-' + Date.now());
+            const response = await fetch(url, {
+              headers: {'Cache-Control': 'no-cache'}, cache: 'no-store',
+              redirect: 'error', signal: AbortSignal.timeout(15000)
+            });
+            if (!response.ok || !(response.headers.get('content-type') || '').includes(type)) {
+              throw Error(`No se pudo verificar ${path || '/'}: HTTP ${response.status}, tipo inesperado o error`);
+            }
+            const body = await response.text();
+            if (!body.trim()) throw Error(`Respuesta vacía en ${path || '/'}`);
+            return body;
+          }
+          for (let attempt = 0; ; attempt++) {
+            try {
+              const marker = JSON.parse(await read('deployment.json', 'application/json'));
+              if (marker.target !== 'github-pages' || marker.commit !== expected || marker.buildId !== buildId) {
+                throw Error('Pages todavía sirve otra publicación');
+              }
+              break;
+            } catch (error) {
+              if (attempt >= 11) throw error;
+              await delay(5000);
+            }
+          }
+          const config = JSON.parse(await read('config.json', 'application/json'));
+          if (config.basePath !== base.pathname) throw Error('BASE_PATH no coincide con la URL publicada');
+          for (const [path, type] of [
+            ['', 'text/html'], ['agenda/', 'text/html'], ['recursos/', 'text/html'],
+            ['participar/', 'text/html'], ['styles.css', 'text/css'], ['app.js', 'javascript']
+          ]) {
+            await read(path, type);
+            console.log(`OK ${new URL(path, base)}`);
+          }
+          console.log(`GitHub Pages verificado: ${base.href} @ ${expected} (${buildId})`);
+          console.log('Esta publicación es estática; no despliega el backend ni migra su dominio.');
+          if (process.env.GITHUB_STEP_SUMMARY) {
+            await appendFile(process.env.GITHUB_STEP_SUMMARY,
+              `## Web pública publicada y verificada\n\nURL: ${base.href}\n\nCommit: ${expected}\n\nBuild: ${buildId}\n\nEl backend/CMS conserva su despliegue separado.\n`);
+          }
+          NODE
