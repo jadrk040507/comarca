@@ -24,6 +24,9 @@ export async function handle(request,env,fetcher=fetch){
  if(path==='/cms'||path.startsWith('/cms/')||path==='/equipo/activar')return cms(request,env,fetcher);
  if(new URL(request.url).pathname==='/equipo'||new URL(request.url).pathname.startsWith('/equipo/'))return team(request,env,fetcher);
  if(['/public/agenda','/calendario.ics'].includes(new URL(request.url).pathname))return publicAgenda(request,env,fetcher);
+ // Static Assets owns the public site. Only safe read requests that did not
+ // already match an application route may fall through to it.
+ if(['GET','HEAD'].includes(request.method)&&path!=='/solicitudes'&&env.ASSETS)return env.ASSETS.fetch(request);
  const origin=request.headers.get('Origin'),allowed=(env.ALLOWED_ORIGINS||'').split(',');
  const headers={'Content-Type':'application/json;charset=utf-8','Cache-Control':'no-store','Vary':'Origin','X-Content-Type-Options':'nosniff'};
  const reply=(status,message)=>new Response(JSON.stringify({ok:status===201,message}),{status,headers});

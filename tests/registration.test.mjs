@@ -5,6 +5,11 @@ test('Registration cannot set confirmation, payments, attendance or private rela
 const env={ALLOWED_ORIGINS:'https://la-comarca.github.io',NOTION_TOKEN:'test',TURNSTILE_SECRET_KEY:'test',NOTION_DATA_SOURCE_ID:'ds',FORM_LIMIT:{limit:async()=>({success:true})}};
 const request=(origin='https://la-comarca.github.io')=>new Request('https://api.example/solicitudes',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify(input)});
 test('Registration rejects foreign origins and invalid challenge without touching Notion',async()=>{let calls=0;const no=async()=>{calls++;return Response.json({success:false});};assert.equal((await handle(request('https://other.example'),env,no)).status,403);assert.equal(calls,0);assert.equal((await handle(request(),env,no)).status,400);assert.equal(calls,1);});
+test('Unknown safe public reads fall back to the same-origin static site',async()=>{
+ let served='';const assets={fetch:async request=>{served=new URL(request.url).pathname;return new Response('public site');}};
+ const response=await handle(new Request('https://example.com/agenda/'),{...env,ASSETS:assets});
+ assert.equal(response.status,200);assert.equal(await response.text(),'public site');assert.equal(served,'/agenda/');
+});
 test('Registration reports success only after private storage succeeds',async()=>{const mock=async url=>url.includes('siteverify')?Response.json({success:true,hostname:'la-comarca.github.io',action:'inscripcion'}):new Response('{}',{status:201});assert.equal((await handle(request(),env,mock)).status,201);const bad=async url=>url.includes('siteverify')?Response.json({success:true,hostname:'la-comarca.github.io',action:'inscripcion'}):new Response('{}',{status:500});assert.equal((await handle(request(),env,bad)).status,502);});
 test('dynamic event requests are linked only after checking source and publication',async()=>{
  const eventId='11111111-1111-4111-8111-111111111111',source='22222222-2222-4222-8222-222222222222';let saved=0;

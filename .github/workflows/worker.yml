@@ -21,6 +21,12 @@ jobs:
       - name: Instalar dependencias del Worker
         run: npm ci --prefix api
       - name: Verificar código y pruebas
+        env:
+          BASE_PATH: /
+          PLATFORM_ORIGIN: https://la-comarca-formularios.la-comarca.workers.dev
+          REGISTRATION_API: ${{ vars.REGISTRATION_API }}
+          TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
+          ONESIGNAL_APP_ID: ${{ vars.ONESIGNAL_APP_ID }}
         run: npm run check
       - name: Verificar configuración Wrangler
         working-directory: api
