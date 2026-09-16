@@ -143,7 +143,7 @@ create index registrations_activity_idx on public.registrations(activity_id,stat
 create index audit_events_created_at_idx on public.audit_events(created_at desc);
 
 create or replace function public.is_member(target_workspace uuid, allowed_roles public.member_role[] default null)
-returns boolean language sql stable security definer set search_path = public as $$
+returns boolean language sql stable security invoker set search_path = public as $$
   select exists (
     select 1 from public.workspace_memberships m
     where m.workspace_id = target_workspace and m.user_id = auth.uid() and m.active
