@@ -187,5 +187,7 @@ insert into public.workspaces(key,name,description) values
   ('agenda','Agenda','Actividades y calendario de La Comarca'),
   ('catecismo','Catecismo','Grupos, sesiones y seguimiento privado'),
   ('materiales','Materiales','Recursos editoriales y de trabajo'),
+  ('traslados','Traslados','Logística de conductores y trayectos'),
+  ('inscripciones','Inscripciones','Solicitudes y seguimiento de participantes'),
   ('operaciones','Operaciones','Tareas, logística e incidencias')
 on conflict (key) do nothing;

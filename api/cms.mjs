@@ -60,11 +60,11 @@ export async function cms(request,env,fetcher=fetch,dependencies={}) {
    return reply({message:'Cuenta activada. Entra con tu correo y contraseña.'},201);
   }
   let user;try{user=await (dependencies.authenticate||cmsIdentity)(request,env,auth);}catch{return reply({message:'Inicia sesión con una cuenta autorizada.'},401);}
-  if(path==='/cms/api/me'&&method==='GET')return reply({name:user.name,email:user.email,role:user.role,modules:user.modules,canUpdate:env.CMS_AGENDA_EDIT_ENABLED==='true'});
+  if(path==='/cms/api/me'&&method==='GET')return reply({name:user.name,email:user.email,role:user.role,modules:user.modules,canUpdate:env.CMS_AGENDA_EDIT_ENABLED==='true',supabase:user.supabase?.status==='active'?{status:'active',profileId:user.supabase.profileId,memberships:user.supabase.memberships}: {status:user.supabase?.status||'disabled'}});
   if(path==='/cms/api/supabase-status'&&method==='GET'){
    if(user.role!=='admin')return reply({message:'Acceso restringido.'},403);
-   if(!env.SUPABASE_URL||!env.SUPABASE_SERVICE_ROLE_KEY)return reply({configured:false,healthy:false});
-   try{await supabaseRequest(env,'rest/v1/workspaces?select=key&limit=1');return reply({configured:true,healthy:true});}
+   if(!env.SUPABASE_URL||!env.SUPABASE_SERVICE_ROLE_KEY)return reply({configured:false,healthy:false,profile:user.supabase?.status||'disabled'});
+   try{const workspaces=await supabaseRequest(env,'rest/v1/workspaces?select=key&active=eq.true');return reply({configured:true,healthy:true,profile:user.supabase?.status||'disabled',workspaceCount:workspaces.length,memberships:user.supabase?.memberships?.length||0});}
    catch{return reply({configured:true,healthy:false});}
   }
   if(fileRoute&&method==='POST'){const result=await uploadFile(request,env,user,fileRoute[1],fileRoute[2],fetcher);await recordUpdate(env,user,fileRoute[1],result.record.id,'updated',{source:'cms',operation:'file_upload'});return reply(result);}
