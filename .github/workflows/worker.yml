@@ -23,11 +23,13 @@ jobs:
       - name: Verificar código y pruebas
         run: npm run check
       - name: Verificar configuración Wrangler
-        run: npx --prefix api wrangler deploy --dry-run
+        working-directory: api
+        run: npx wrangler deploy --dry-run
       - name: Desplegar Worker
         if: inputs.deploy == true
+        working-directory: api
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
-          npx --prefix api wrangler d1 migrations apply la-comarca-cms --remote
-          npx --prefix api wrangler deploy --keep-vars
+          npx wrangler d1 migrations apply la-comarca-cms --remote
+          npx wrangler deploy --keep-vars
