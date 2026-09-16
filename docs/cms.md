@@ -1,8 +1,10 @@
 # Panel de La Comarca
 
-El despliegue del Worker se verifica y se puede iniciar manualmente desde el workflow **Verificar y desplegar Worker de La Comarca**. El workflow no despliega automáticamente: requiere seleccionar explícitamente `deploy=true` después de pasar las pruebas.
+El despliegue del Worker se verifica y se puede iniciar manualmente desde el workflow **Verificar y desplegar Worker de La Comarca**. El workflow no despliega automáticamente: requiere seleccionar explícitamente `deploy=true` después de pasar las pruebas. Para desplegar, el repositorio necesita el secreto de Actions `CLOUDFLARE_API_TOKEN`, con permisos mínimos para editar ese Worker y aplicar migraciones D1. El flujo conserva las variables y secretos existentes del Worker y aplica las migraciones antes del despliegue.
 
 El panel propio vive en `/cms/` del Worker. La web pública enlaza desde «Acceso del equipo». Notion conserva los datos de organización; D1 guarda cuentas, sesiones, límites de autenticación, invitaciones, permisos y un registro mínimo de novedades. El sitio público sigue alojado en GitHub Pages.
+
+`la-comarca.github.io` es un dominio administrado por GitHub Pages y no puede servir el Worker bajo una ruta propia. Para evitar el subdominio técnico `workers.dev`, configurar un dominio propio en Cloudflare —por ejemplo `equipo.<dominio-de-la-comarca>`— como Custom Domain del Worker y usarlo como enlace de equipo. Esto requiere controlar un dominio de La Comarca y su DNS; no se soluciona de forma segura con una redirección de GitHub Pages.
 
 El inicio del panel presenta próximas actividades, acciones pendientes, disponibilidad y novedades. Al abrir una actividad de Agenda, el panel consulta los registros relacionados autorizados —por ejemplo materiales, inscripciones, turnos o traslados— sin copiar sus propiedades privadas ni sustituir la ficha operativa original.
 
