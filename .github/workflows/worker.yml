@@ -23,7 +23,7 @@ jobs:
       - name: Verificar código y pruebas
         env:
           BASE_PATH: /
-          PLATFORM_ORIGIN: https://la-comarca-formularios.la-comarca.workers.dev
+          PLATFORM_ORIGIN: https://comarca.kipadmon.com
           REGISTRATION_API: ${{ vars.REGISTRATION_API }}
           TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
           ONESIGNAL_APP_ID: ${{ vars.ONESIGNAL_APP_ID }}
