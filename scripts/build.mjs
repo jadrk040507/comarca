@@ -5,7 +5,7 @@ const basePath=process.env.BASE_PATH||'/comarca/';if(!/^\/(?:[a-zA-Z0-9_-]+\/)*$
 const oneSignalAppId=process.env.ONESIGNAL_APP_ID||'';if(oneSignalAppId&&!/^[a-f0-9-]{36}$/i.test(oneSignalAppId))throw Error('ONESIGNAL_APP_ID inválido');
 const registrationApi=process.env.REGISTRATION_API||'',turnstileSiteKey=process.env.TURNSTILE_SITE_KEY||'';
 if(registrationApi&&!/^https:\/\/[^\s]+\/solicitudes$/.test(registrationApi))throw Error('REGISTRATION_API inválido');
-const platformOrigin=process.env.PLATFORM_ORIGIN||'https://la-comarca-formularios.la-comarca.workers.dev';
+const platformOrigin=process.env.PLATFORM_ORIGIN||'https://comarca.kipadmon.com';
 if(!/^https:\/\/[^\s/]+$/.test(platformOrigin))throw Error('PLATFORM_ORIGIN inválido');
 const data=JSON.parse(await readFile('public/data.json','utf8'));if(!Array.isArray(data.events)||!Array.isArray(data.resources))throw Error('Datos inválidos');
 await rm('dist',{recursive:true,force:true});await mkdir('dist',{recursive:true});await cp('public','dist',{recursive:true});
@@ -18,5 +18,5 @@ let html=await readFile('dist/index.html','utf8');html=html.replace('./styles.cs
 let app=await readFile('dist/app.js','utf8');app=app.replace("'./calendar.js'",`'./calendar.js?v=${version}'`);app=app.replace("'./motion.js'",`'./motion.js?v=${version}'`);app=app.replace("'./registration.js'",`'./registration.js?v=${version}'`);app=app.replace("'./formation.js'",`'./formation.js?v=${version}'`);app=app.replace("'./subscription.js'",`'./subscription.js?v=${version}'`);await writeFile('dist/app.js',app);
 
 const {buildPages}=await import('./pages.mjs');
-await buildPages(data,basePath,version);
+await buildPages(data,basePath,version,platformOrigin);
 await import('./check-site.mjs');
